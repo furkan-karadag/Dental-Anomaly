@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { analyzeImage, getPatients, createPatient, api } from '../api';
+import { analyzeImage, getPatients, getTumAnalizler, createPatient, api } from '../api';
 import toast from 'react-hot-toast';
+import DashboardLayout from '../components/DashboardLayout';
 
 const Analysis = () => {
     const location = useLocation();
@@ -12,16 +13,25 @@ const Analysis = () => {
 
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [patients, setPatients] = useState([]);
+    const [analyses, setAnalyses] = useState([]);
+    const [filterMode, setFilterMode] = useState('all');
+    const [selectedDisease, setSelectedDisease] = useState('');
+    const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
+    const [filterPatientName, setFilterPatientName] = useState('');
+    const [filterStartDate, setFilterStartDate] = useState('');
+    const [filterEndDate, setFilterEndDate] = useState('');
     const [showPatientSelect, setShowPatientSelect] = useState(!initialPatientId);
 
     // New Patient Form State
     const [showNewPatientForm, setShowNewPatientForm] = useState(false);
+    const [showSelectPatientModal, setShowSelectPatientModal] = useState(false);
     const [newPatientv, setNewPatientv] = useState({ ad: '', soyad: '', tc_no: '' });
 
     const [imageSrc, setImageSrc] = useState(null);
     const [findings, setFindings] = useState([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [loadingPatients, setLoadingPatients] = useState(false);
+    const [loadingAnalyses, setLoadingAnalyses] = useState(false);
 
     useEffect(() => {
         const loadPatients = async () => {
@@ -46,7 +56,23 @@ const Analysis = () => {
                 setLoadingPatients(false);
             }
         };
+
+        const loadAnalyses = async () => {
+            setLoadingAnalyses(true);
+            try {
+                const data = await getTumAnalizler();
+                if (data.analizler) {
+                    setAnalyses(data.analizler);
+                }
+            } catch (error) {
+                console.error("Failed to load analyses", error);
+            } finally {
+                setLoadingAnalyses(false);
+            }
+        };
+
         loadPatients();
+        loadAnalyses();
     }, [initialPatientId]);
 
     const handlePatientSelect = (patient) => {
@@ -117,86 +143,313 @@ const Analysis = () => {
         setShowPatientSelect(true);
     };
 
+    const clearFilters = () => {
+        setFilterPatientName('');
+        setSelectedDisease('');
+        setFilterStartDate('');
+        setFilterEndDate('');
+        setFilterMode('all');
+    };
+
+    const uniqueDiseases = [...new Set(analyses.flatMap(a => a.rapor ? a.rapor.split(', ').map(s => s.split(' (')[0].trim()) : []))].filter(Boolean).sort();
+
+    const parseBackendDate = (dateStr) => {
+        if (!dateStr) return null;
+        const [datePart] = dateStr.split(' ');
+        if (!datePart) return null;
+        const [d, m, y] = datePart.split('-');
+        if (!d || !m || !y) return null;
+        return new Date(`${y}-${m}-${d}`);
+    };
+
+    const filteredAnalyses = analyses.filter(a => {
+        if (filterMode === 'today') {
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            const todayFormatted = `${dd}-${mm}-${yyyy}`;
+            if (!a.tarih || !a.tarih.startsWith(todayFormatted)) return false;
+        }
+
+        if (selectedDisease !== '') {
+            if (!a.rapor || !a.rapor.includes(selectedDisease)) return false;
+        }
+
+        if (filterPatientName.trim() !== '') {
+            const lowerSearch = filterPatientName.toLowerCase();
+            const adSoyad = `${a.ad || ''} ${a.soyad || ''}`.toLowerCase();
+            const matchesName = adSoyad.includes(lowerSearch);
+            const matchesTc = typeof a.tc_no === 'string' ? a.tc_no.includes(filterPatientName) : (a.tc_no ? String(a.tc_no).includes(filterPatientName) : false);
+            if (!matchesName && !matchesTc) return false;
+        }
+
+        if (filterStartDate) {
+            const startD = new Date(filterStartDate);
+            startD.setHours(0,0,0,0);
+            const aDate = parseBackendDate(a.tarih);
+            if (aDate && aDate < startD) return false;
+        }
+
+        if (filterEndDate) {
+            const endD = new Date(filterEndDate);
+            endD.setHours(23,59,59,999);
+            const aDate = parseBackendDate(a.tarih);
+            if (aDate && aDate > endD) return false;
+        }
+
+        return true;
+    });
+
     if (showPatientSelect) {
         return (
-            <div className="min-h-screen bg-background-light dark:bg-background-dark flex flex-col items-center justify-center p-4 font-display">
-                <div className="w-full max-w-2xl bg-white dark:bg-surface-dark rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+            <DashboardLayout>
+                <div className="flex-1 px-4 md:px-8 pb-12 w-full max-w-7xl mx-auto mt-6 transition-all">
+                    {/* Header Section */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
                         <div>
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">Select Patient</h2>
-                            <p className="text-sm text-slate-500">Choose a patient to start a new analysis</p>
+                            <h1 className="text-[1.875rem] font-bold text-on-surface font-headline tracking-tight leading-tight">Analiz Listesi</h1>
+                            <p className="text-on-surface-variant text-sm mt-1 font-body flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm">medical_services</span>
+                                Toplam {filteredAnalyses.length} analiz raporu
+                            </p>
                         </div>
-                        <button
-                            onClick={() => setShowNewPatientForm(!showNewPatientForm)}
-                            className="text-sm font-semibold text-primary hover:text-blue-700 transition"
-                        >
-                            {showNewPatientForm ? "Cancel" : "+ New Patient"}
+                        <button onClick={() => setShowSelectPatientModal(true)} className="bg-primary hover:bg-primary/90 text-on-primary font-medium text-sm px-6 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 font-body whitespace-nowrap">
+                            <span className="material-symbols-outlined text-lg">add_circle</span>
+                            Yeni Analiz
                         </button>
                     </div>
-
-                    <div className="p-6 max-h-[60vh] overflow-y-auto">
-                        {showNewPatientForm ? (
-                            <form onSubmit={handleCreatePatient} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">First Name</label>
-                                    <input
-                                        type="text" required
-                                        className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
-                                        value={newPatientv.ad}
-                                        onChange={e => setNewPatientv({ ...newPatientv, ad: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Last Name</label>
-                                    <input
-                                        type="text" required
-                                        className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
-                                        value={newPatientv.soyad}
-                                        onChange={e => setNewPatientv({ ...newPatientv, soyad: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">TC ID Number</label>
-                                    <input
-                                        type="text" required
-                                        className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
-                                        value={newPatientv.tc_no}
-                                        onChange={e => setNewPatientv({ ...newPatientv, tc_no: e.target.value })}
-                                    />
-                                </div>
-                                <button className="w-full bg-primary text-white py-2.5 rounded-lg font-bold hover:bg-blue-600 transition shadow-lg shadow-blue-500/30">
-                                    Create Patient
-                                </button>
-                            </form>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-3">
-                                {loadingPatients ? (
-                                    <p className="text-center text-slate-500 py-4">Loading patients...</p>
-                                ) : patients.length === 0 ? (
-                                    <p className="text-center text-slate-500 py-4">No patients found. Create one to continue.</p>
-                                ) : (
-                                    patients.map(p => (
-                                        <button
-                                            key={p.id}
-                                            onClick={() => handlePatientSelect(p)}
-                                            className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/5 transition group text-left"
-                                        >
-                                            <div>
-                                                <h3 className="font-bold text-slate-800 dark:text-white group-hover:text-primary">{p.ad} {p.soyad}</h3>
-                                                <span className="text-xs font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">ID: {p.tc_no}</span>
-                                            </div>
-                                            <span className="material-symbols-outlined text-slate-300 group-hover:text-primary">arrow_forward_ios</span>
-                                        </button>
-                                    ))
-                                )}
-                            </div>
-                        )}
+                    {/* Filter Bar Row */}
+                    <div className="bg-surface border border-outline/50 rounded-xl p-2 mb-2 flex flex-col sm:flex-row gap-2 justify-between items-center shadow-sm">
+                        <div className="flex gap-1 bg-surface-container-low p-1 rounded-lg w-full sm:w-auto">
+                            <button onClick={() => setFilterMode('all')} className={`px-4 py-1.5 text-sm font-medium rounded-md font-body flex-1 sm:flex-none transition-colors ${filterMode === 'all' ? 'bg-surface text-on-surface shadow-sm' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface/50'}`}>Tüm Analizler</button>
+                            <button onClick={() => setFilterMode('today')} className={`px-4 py-1.5 text-sm font-medium rounded-md font-body flex-1 sm:flex-none transition-colors ${filterMode === 'today' ? 'bg-surface text-on-surface shadow-sm' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface/50'}`}>Bugün</button>
+                        </div>
+                        <div className="flex gap-2 w-full sm:w-auto px-2 sm:px-0 items-center justify-end">
+                            <button onClick={() => setIsAdvancedFilterOpen(!isAdvancedFilterOpen)} className={`px-4 py-1.5 flex items-center gap-2 rounded-lg transition-colors text-sm font-medium font-body ${isAdvancedFilterOpen ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-container'}`} title="Detaylı Filtreleme">
+                                <span className="material-symbols-outlined text-[18px]">tune</span>
+                                Gelişmiş Filtre
+                            </button>
+                        </div>
                     </div>
-                    <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-center">
-                        <button onClick={() => navigate('/')} className="text-sm text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">Cancel & Return to Dashboard</button>
+                    {/* Advanced Filter Area */}
+                    {isAdvancedFilterOpen && (
+                        <div className="bg-surface border border-outline/50 rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-4 shadow-sm animate-in slide-in-from-top-2 fade-in duration-200">
+                            <div className="flex flex-col gap-1.5 w-full flex-1">
+                                <label className="text-[0.65rem] font-bold text-on-surface-variant uppercase tracking-wider font-headline ml-1">Kişi Ara</label>
+                                <div className="relative">
+                                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+                                    <input 
+                                        type="text" 
+                                        placeholder="İsim, Soyisim, TC..." 
+                                        value={filterPatientName}
+                                        onChange={(e) => setFilterPatientName(e.target.value)}
+                                        className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-outline/50 bg-surface focus:outline-none focus:border-primary/50 text-on-surface transition-colors font-body placeholder:text-on-surface-variant/50"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1.5 w-full flex-1">
+                                <label className="text-[0.65rem] font-bold text-on-surface-variant uppercase tracking-wider font-headline ml-1">Hastalık / Bulgu</label>
+                                <div className="relative">
+                                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">medical_services</span>
+                                    <select 
+                                        value={selectedDisease}
+                                        onChange={(e) => setSelectedDisease(e.target.value)}
+                                        className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-outline/50 bg-surface focus:outline-none focus:border-primary/50 text-on-surface transition-colors font-body appearance-none cursor-pointer truncate"
+                                    >
+                                        <option value="">Tüm Bulgular</option>
+                                        {uniqueDiseases.map((d, i) => <option key={i} value={d}>{d}</option>)}
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1.5 w-full flex-1">
+                                <label className="text-[0.65rem] font-bold text-on-surface-variant uppercase tracking-wider font-headline ml-1">Başlangıç Tarihi</label>
+                                <input 
+                                    type="date" 
+                                    max={filterEndDate || undefined}
+                                    value={filterStartDate}
+                                    onChange={(e) => setFilterStartDate(e.target.value)}
+                                    className="w-full px-3 py-2 text-sm rounded-lg border border-outline/50 bg-surface focus:outline-none focus:border-primary/50 text-on-surface transition-colors font-body"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1.5 w-full flex-1">
+                                <label className="text-[0.65rem] font-bold text-on-surface-variant uppercase tracking-wider font-headline ml-1">Bitiş Tarihi</label>
+                                <input 
+                                    type="date" 
+                                    min={filterStartDate || undefined}
+                                    value={filterEndDate}
+                                    onChange={(e) => setFilterEndDate(e.target.value)}
+                                    className="w-full px-3 py-2 text-sm rounded-lg border border-outline/50 bg-surface focus:outline-none focus:border-primary/50 text-on-surface transition-colors font-body"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1.5 w-full md:w-auto self-end pb-0">
+                                <button onClick={clearFilters} className="px-4 py-2 text-sm font-medium rounded-lg bg-surface hover:bg-surface-container/80 border border-outline/50 transition-colors text-on-surface-variant hover:text-on-surface flex items-center justify-center gap-2">
+                                    <span className="material-symbols-outlined text-[18px]">clear_all</span>
+                                    <span>Temizle</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    {/* Analyses Table Card */}
+                    <div className="bg-surface rounded-2xl shadow-sm border border-outline/50 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-surface-container-low/50 border-b border-outline/50">
+                                        <th className="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider font-headline">Tarih</th>
+                                        <th className="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider font-headline">Hasta Adı</th>
+                                        <th className="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider font-headline">Rapor Özeti</th>
+                                        <th className="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider font-headline text-right">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-outline/30 font-body text-sm">
+                                    {loadingAnalyses ? (
+                                        <tr>
+                                            <td colSpan="4" className="text-center py-8 text-on-surface-variant">Analizler yükleniyor...</td>
+                                        </tr>
+                                    ) : filteredAnalyses.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="4" className="text-center py-8 text-on-surface-variant">Aradığınız kriterlere uygun analiz raporu bulunamadı.</td>
+                                        </tr>
+                                    ) : (
+                                        filteredAnalyses.map((analiz) => (
+                                            <tr key={analiz.id} className="hover:bg-primary/5 transition-colors group cursor-pointer" onClick={() => navigate('/patients', { state: { patientId: analiz.hasta_id, reportId: analiz.id } })}>
+                                                <td className="px-6 py-4 text-on-surface-variant font-medium text-xs whitespace-nowrap">{analiz.tarih}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs border border-primary/20 uppercase shrink-0">
+                                                            {analiz.ad.charAt(0)}{analiz.soyad.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-medium text-on-surface whitespace-nowrap">{analiz.ad} {analiz.soyad}</div>
+                                                            <div className="text-xs text-on-surface-variant font-mono">{analiz.tc_no}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-on-surface-variant max-w-[300px] truncate" title={analiz.rapor}>
+                                                    {analiz.rapor || "Sonuç Bekleniyor"}
+                                                </td>
+                                                <td className="px-6 py-4 text-right align-middle">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); navigate('/patients', { state: { patientId: analiz.hasta_id, reportId: analiz.id } }); }}
+                                                            className="text-emerald-700 hover:text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+                                                        >
+                                                            <span className="material-symbols-outlined text-[18px]">visibility</span>
+                                                            <span className="hidden sm:inline">Görüntüle</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
+
+                {/* Hasta Seçim Modali (Yeni Analiz için) */}
+                {showSelectPatientModal && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-surface-dark rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh]">
+                            <div className="p-6 border-b border-outline/50 flex justify-between items-center bg-surface-container-low shrink-0">
+                                <div>
+                                    <h3 className="text-xl font-bold font-headline text-on-surface">Analiz İçin Hasta Seç</h3>
+                                    <p className="text-sm text-on-surface-variant mt-1">Lütfen mevcut bir hasta seçin veya yeni ekleyin</p>
+                                </div>
+                                <button onClick={() => setShowSelectPatientModal(false)} className="text-on-surface-variant hover:text-on-surface transition-colors">
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
+                            <div className="p-4 overflow-y-auto flex-1 bg-surface">
+                                {loadingPatients ? (
+                                    <p className="text-center text-on-surface-variant py-4">Hastalar yükleniyor...</p>
+                                ) : patients.length === 0 ? (
+                                    <p className="text-center text-on-surface-variant py-4">Sistemde henüz hasta kaydı bulunmuyor.</p>
+                                ) : (
+                                    <div className="grid gap-2">
+                                        {patients.map(p => (
+                                            <button
+                                                key={p.id}
+                                                onClick={() => { setShowSelectPatientModal(false); handlePatientSelect(p); }}
+                                                className="flex items-center justify-between p-3 rounded-xl border border-outline hover:border-primary hover:bg-primary/5 transition group text-left"
+                                            >
+                                                <div>
+                                                    <h3 className="font-bold text-on-surface group-hover:text-primary transition-colors">{p.ad} {p.soyad}</h3>
+                                                    <span className="text-xs font-mono text-on-surface-variant bg-surface-container-low px-1.5 py-0.5 rounded mt-1 inline-block">TC: {p.tc_no}</span>
+                                                </div>
+                                                <span className="material-symbols-outlined text-outline group-hover:text-primary transition-colors">arrow_forward_ios</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="p-4 border-t border-outline/50 bg-surface-container-low flex justify-between gap-3 shrink-0">
+                                <button onClick={() => { setShowSelectPatientModal(false); setShowNewPatientForm(true); }} className="flex-1 py-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 font-medium transition flex items-center justify-center gap-2">
+                                    <span className="material-symbols-outlined text-[20px]">person_add</span>
+                                    Yeni Hasta Ekle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Yeni Hasta Ekle Modal */}
+                {showNewPatientForm && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <div className="bg-white dark:bg-surface-dark rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+                            <div className="p-6 border-b border-outline/50 flex justify-between items-center bg-surface-container-low">
+                                <h3 className="text-xl font-bold font-headline text-on-surface">Yeni Hasta Ekle</h3>
+                                <button onClick={() => setShowNewPatientForm(false)} className="text-on-surface-variant hover:text-on-surface transition-colors">
+                                    <span className="material-symbols-outlined">close</span>
+                                </button>
+                            </div>
+                            <form onSubmit={(e) => {
+                                handleCreatePatient(e).then(() => {
+                                    /* HandleCreatePatient reloads getPatients, modal closes there */
+                                });
+                            }} className="p-6 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-on-surface-variant mb-1">Ad</label>
+                                    <input type="text" required
+                                        className="w-full px-4 py-2 border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-body bg-surface text-on-surface"
+                                        value={newPatientv.ad} onChange={e => setNewPatientv({...newPatientv, ad: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-on-surface-variant mb-1">Soyad</label>
+                                    <input type="text" required
+                                        className="w-full px-4 py-2 border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-body bg-surface text-on-surface"
+                                        value={newPatientv.soyad} onChange={e => setNewPatientv({...newPatientv, soyad: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-on-surface-variant mb-1">TC Kimlik No</label>
+                                    <input type="text" required
+                                        maxLength={11}
+                                        minLength={11}
+                                        pattern="\d{11}"
+                                        title="TC Kimlik numarası 11 rakamdan oluşmalıdır."
+                                        className="w-full px-4 py-2 border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-body bg-surface text-on-surface"
+                                        value={newPatientv.tc_no} 
+                                        onChange={e => setNewPatientv({...newPatientv, tc_no: e.target.value.replace(/\D/g, '')})}
+                                    />
+                                </div>
+                                <div className="pt-4 flex gap-3">
+                                    <button type="button" onClick={() => setShowNewPatientForm(false)} className="flex-1 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface font-medium rounded-xl transition-colors">
+                                        İptal
+                                    </button>
+                                    <button type="submit" className="flex-1 py-2.5 bg-primary hover:bg-primary/90 text-on-primary font-medium rounded-xl transition-colors shadow-sm focus:ring-4 focus:ring-primary/20">
+                                        Kaydet
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </DashboardLayout>
         );
     }
 

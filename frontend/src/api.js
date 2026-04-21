@@ -25,6 +25,11 @@ export const getPatientHistory = async (id) => {
     return response.data;
 };
 
+export const getTumAnalizler = async () => {
+    const response = await api.get("/analysis/tum_analizler");
+    return response.data;
+};
+
 export const analyzeImage = async (hastaId, formData) => {
     const response = await api.post(`/analysis/analiz_et/${hastaId}`, formData, {
         headers: {

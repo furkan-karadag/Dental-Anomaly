@@ -68,7 +68,7 @@ const DashboardLayout = ({ children, user }) => {
                         />
                         <NavItem
                             icon="medical_services"
-                            label="New Analysis"
+                            label="Analysis List"
                             active={location.pathname === '/analysis'}
                             onClick={() => navigate('/analysis')}
                             expanded={sidebarOpen || mobileMenuOpen}

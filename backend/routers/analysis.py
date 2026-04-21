@@ -5,6 +5,7 @@ import io
 import os
 import json
 import datetime
+import sqlite3
 from ..database import db_baglan
 from ..config import RESIM_KLASORU
 from ..dependencies import get_current_user
@@ -92,3 +93,23 @@ async def analiz_et(hasta_id: int, file: UploadFile = File(...), current_user: d
         }
     except Exception as e:
         return {"hata": str(e)}
+
+@router.get("/tum_analizler")
+def tum_analizleri_getir(current_user: dict = Depends(get_current_user)):
+    conn = db_baglan()
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    # Join rontgenler with hastalar to get patient info
+    query = """
+        SELECT r.id, r.hasta_id, r.dosya_yolu, r.rapor, r.tarih, r.detections, h.ad, h.soyad, h.tc_no
+        FROM rontgenler r
+        JOIN hastalar h ON r.hasta_id = h.id
+        WHERE h.doktor_id = ?
+        ORDER BY r.id DESC
+    """
+    c.execute(query, (current_user["id"],))
+    rows = c.fetchall()
+    conn.close()
+    
+    analizler_list = [dict(row) for row in rows]
+    return {"analizler": analizler_list}

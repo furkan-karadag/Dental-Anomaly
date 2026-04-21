@@ -12,6 +12,9 @@ const API_URL = "http://127.0.0.1:8000";
 
 function Patients() {
     const [hastalar, setHastalar] = useState([]);
+    const [sortMode, setSortMode] = useState('newest');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showSearch, setShowSearch] = useState(false);
     const [seciliHasta, setSeciliHasta] = useState(null);
     const [analizSonucu, setAnalizSonucu] = useState(null);
     const [gecmis, setGecmis] = useState([]);
@@ -213,6 +216,27 @@ function Patients() {
         });
     };
 
+    let displayedPatients = [...hastalar];
+    
+    if (sortMode === 'newest') {
+        displayedPatients.reverse();
+    } else if (sortMode === 'oldest') {
+        // do nothing
+    } else if (sortMode === 'az') {
+        displayedPatients.sort((a,b) => a.ad.localeCompare(b.ad));
+    } else if (sortMode === 'za') {
+        displayedPatients.sort((a,b) => b.ad.localeCompare(a.ad));
+    }
+    
+    if (searchTerm.trim() !== '') {
+        const lowerSearch = searchTerm.toLowerCase();
+        displayedPatients = displayedPatients.filter(p => {
+            const matchesName = p.ad.toLowerCase().includes(lowerSearch) || p.soyad.toLowerCase().includes(lowerSearch);
+            const matchesTc = p.tc_no && p.tc_no.includes(searchTerm);
+            return matchesName || matchesTc;
+        });
+    }
+
     return (
         <DashboardLayout>
             {!seciliHasta ? (
@@ -224,7 +248,7 @@ function Patients() {
                             <h1 className="text-[1.875rem] font-bold text-on-surface font-headline tracking-tight leading-tight">Hasta Listesi</h1>
                             <p className="text-on-surface-variant text-sm mt-1 font-body flex items-center gap-2">
                                 <span className="material-symbols-outlined text-sm">groups</span>
-                                Toplam {hastalar.length} kayıtlı hasta
+                                Toplam {displayedPatients.length} {hastalar.length !== displayedPatients.length ? `/ ${hastalar.length} ` : ''}hasta
                             </p>
                         </div>
                         <button onClick={() => setShowAddModal(true)} className="bg-primary hover:bg-primary/90 text-on-primary font-medium text-sm px-6 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 font-body whitespace-nowrap">
@@ -234,13 +258,32 @@ function Patients() {
                     </div>
                     {/* Filter Bar */}
                     <div className="bg-surface border border-outline/50 rounded-xl p-2 mb-6 flex flex-col sm:flex-row gap-2 justify-between items-center shadow-sm">
-                        <div className="flex gap-1 bg-surface-container-low p-1 rounded-lg w-full sm:w-auto">
-                            <button className="px-4 py-1.5 text-sm font-medium rounded-md bg-surface text-on-surface shadow-sm font-body flex-1 sm:flex-none">Tüm Hastalar</button>
-                            <button className="px-4 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface/50 transition-colors font-body flex-1 sm:flex-none">Son Eklenenler</button>
+                        <div className="flex gap-2 bg-surface-container-low p-1 rounded-lg w-full sm:w-auto items-center px-3 border border-outline/30">
+                            <span className="material-symbols-outlined text-on-surface-variant text-[18px]">sort</span>
+                            <select 
+                                className="bg-transparent border-none text-sm font-medium text-on-surface focus:ring-0 outline-none pr-8 cursor-pointer font-body py-1.5"
+                                value={sortMode}
+                                onChange={(e) => setSortMode(e.target.value)}
+                            >
+                                <option value="newest">Yeniden Eskiye (Son Eklenenler)</option>
+                                <option value="oldest">Eskiden Yeniye</option>
+                                <option value="az">A'dan Z'ye İsim</option>
+                                <option value="za">Z'den A'ya İsim</option>
+                            </select>
                         </div>
                         <div className="flex gap-2 w-full sm:w-auto px-2 sm:px-0">
-                            <button className="p-2 text-on-surface-variant hover:bg-surface-container rounded-lg transition-colors">
-                                <span className="material-symbols-outlined">filter_list</span>
+                            {showSearch && (
+                                <input 
+                                    type="text" 
+                                    placeholder="İsim veya TC No..." 
+                                    className="px-3 py-1.5 text-sm rounded-lg border border-outline/50 bg-surface focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-surface w-full sm:w-48 transition-all"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    autoFocus
+                                />
+                            )}
+                            <button onClick={() => setShowSearch(!showSearch)} className={`p-2 rounded-lg transition-colors ${showSearch ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-container'}`} title="Ara / Filtrele">
+                                <span className="material-symbols-outlined">search</span>
                             </button>
                         </div>
                     </div>
@@ -257,12 +300,12 @@ function Patients() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-outline/30 font-body text-sm">
-                                    {hastalar.length === 0 ? (
+                                    {displayedPatients.length === 0 ? (
                                         <tr>
-                                            <td colSpan="4" className="text-center py-8 text-on-surface-variant">Sistemde henüz hasta kaydı bulunmamaktadır.</td>
+                                            <td colSpan="4" className="text-center py-8 text-on-surface-variant">Arama kriterlerine uygun hasta bulunamadı.</td>
                                         </tr>
                                     ) : (
-                                        hastalar.map((hasta) => (
+                                        displayedPatients.map((hasta) => (
                                             <tr key={hasta.id} className="hover:bg-primary/5 transition-colors group cursor-pointer" onClick={() => hastaSec(hasta)}>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
