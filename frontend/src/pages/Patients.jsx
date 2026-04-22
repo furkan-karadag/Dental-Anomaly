@@ -256,8 +256,7 @@ function Patients() {
                             Yeni Hasta Ekle
                         </button>
                     </div>
-                    {/* Filter Bar */}
-                    <div className="bg-surface border border-outline/50 rounded-xl p-2 mb-6 flex flex-col sm:flex-row gap-2 justify-between items-center shadow-sm">
+                    <div className="bg-surface border border-outline/50 rounded-xl p-2 mb-6 flex justify-end items-center shadow-sm">
                         <div className="flex gap-2 bg-surface-container-low p-1 rounded-lg w-full sm:w-auto items-center px-3 border border-outline/30">
                             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">sort</span>
                             <select 
@@ -265,26 +264,11 @@ function Patients() {
                                 value={sortMode}
                                 onChange={(e) => setSortMode(e.target.value)}
                             >
-                                <option value="newest">Yeniden Eskiye (Son Eklenenler)</option>
+                                <option value="newest">Yeniden Eskiye</option>
                                 <option value="oldest">Eskiden Yeniye</option>
-                                <option value="az">A'dan Z'ye İsim</option>
-                                <option value="za">Z'den A'ya İsim</option>
+                                <option value="az">A'dan Z'ye</option>
+                                <option value="za">Z'den A'ya</option>
                             </select>
-                        </div>
-                        <div className="flex gap-2 w-full sm:w-auto px-2 sm:px-0">
-                            {showSearch && (
-                                <input 
-                                    type="text" 
-                                    placeholder="İsim veya TC No..." 
-                                    className="px-3 py-1.5 text-sm rounded-lg border border-outline/50 bg-surface focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-surface w-full sm:w-48 transition-all"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    autoFocus
-                                />
-                            )}
-                            <button onClick={() => setShowSearch(!showSearch)} className={`p-2 rounded-lg transition-colors ${showSearch ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-container'}`} title="Ara / Filtrele">
-                                <span className="material-symbols-outlined">search</span>
-                            </button>
                         </div>
                     </div>
                     {/* Patient Table Card */}

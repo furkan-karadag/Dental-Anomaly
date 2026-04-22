@@ -7,7 +7,6 @@ const Dashboard = () => {
     const [patients, setPatients] = useState([]);
     const [stats, setStats] = useState({ total_patients: 0, pending_ai: 0, done_today: 0 });
     const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState({ ad: 'Doctor', soyad: '' });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -44,7 +43,7 @@ const Dashboard = () => {
     }, [navigate]);
 
     return (
-        <DashboardLayout user={user}>
+        <DashboardLayout>
             <div className="max-w-7xl mx-auto flex flex-col gap-8">
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -54,7 +53,7 @@ const Dashboard = () => {
                         iconBg="bg-blue-50 dark:bg-blue-900/30"
                         badge={`+${patients.length}`}
                         badgeColor="text-green-600 bg-green-50 dark:bg-green-900/30"
-                        label="Total Patients"
+                        label="Toplam Hasta"
                         value={stats.total_patients}
                         onClick={() => navigate('/patients')}
                     />
@@ -62,17 +61,17 @@ const Dashboard = () => {
                         icon="auto_awesome"
                         iconColor="text-amber-600"
                         iconBg="bg-amber-50 dark:bg-amber-900/30"
-                        label="Issues Found"
-                        value={<>{stats.pending_ai} <span className="text-sm font-normal text-text-sub">Requires review</span></>}
+                        label="Tespit Edilen Sorun"
+                        value={<>{stats.pending_ai} <span className="text-sm font-normal text-text-sub">İnceleme bekliyor</span></>}
                         onClick={() => navigate('/patients')}
                     />
                     <StatCard
                         icon="check_circle"
                         iconColor="text-green-600"
                         iconBg="bg-green-50 dark:bg-green-900/30"
-                        label="Today's Scans"
-                        value={<>{stats.done_today} <span className="text-sm font-normal text-text-sub">Processed</span></>}
-                        onClick={() => navigate('/reports')}
+                        label="Bugünkü Taramalar"
+                        value={<>{stats.done_today} <span className="text-sm font-normal text-text-sub">Tamamlandı</span></>}
+                        onClick={() => navigate('/analysis?filter=today')}
                     />
                 </div>
 
@@ -81,24 +80,24 @@ const Dashboard = () => {
                     <div className="flex items-center justify-between">
                         <h3 className="text-text-main dark:text-white text-xl font-bold tracking-tight flex items-center gap-2">
                             <span className="material-symbols-outlined text-primary">analytics</span>
-                            Recent Patients
+                            Son Hastalar
                         </h3>
                         <button
-                            onClick={() => navigate('/analysis')}
+                            onClick={() => navigate('/analysis?action=new')}
                             className="flex items-center gap-2 bg-primary hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-sm shadow-blue-200 dark:shadow-none"
                         >
                             <span className="material-symbols-outlined text-[20px]">add</span>
-                            New Analysis
+                            Yeni Analiz
                         </button>
                     </div>
 
                     {/* Grid of Cards */}
                     {loading ? (
-                        <div className="text-center py-10 text-slate-500">Loading patients...</div>
+                        <div className="text-center py-10 text-slate-500">Hastalar yükleniyor...</div>
                     ) : patients.length === 0 ? (
                         <div className="text-center py-10 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                            <p className="text-slate-500 mb-4">No patients found.</p>
-                            <button onClick={() => navigate('/analysis')} className="text-primary font-medium hover:underline">Start a new analysis</button>
+                            <p className="text-slate-500 mb-4">Henüz hasta kaydı bulunamadı.</p>
+                            <button onClick={() => navigate('/analysis')} className="text-primary font-medium hover:underline">Yeni analiz başlat</button>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -107,11 +106,11 @@ const Dashboard = () => {
                                     key={patient.id}
                                     name={`${patient.ad} ${patient.soyad}`}
                                     id={patient.tc_no}
-                                    time="Registered recently"
-                                    scanType="Unknown"
+                                    time="Yakın zamanda kayıt oldu"
+                                    scanType="Bilinmiyor"
                                     // Fixed placeholder for now
                                     image="https://lh3.googleusercontent.com/aida-public/AB6AXuBm425Ddwiqi83gG-wcfub3nkBfmOdxC6jJZfbzXPHDzo-4QeQUbODYhcImF7DWwlh5kGnFLkr7fXgvKjVo6-uV1z6vo8lL7u70OUC0K8bovpmuwlkbBqqMn_ZqWl0Yky3cedtHMUDExwiuiVkPuM1NAJA-BT9-kxn6YhMiNK3OwtbRulKDNv0J7wgVHNDoxJLF_rJsYVTPL07oMY1waDrf62VSrN88zm2Gqc4JWmqb5dJzOgldl2Z4zX_e6yCiPrZfUyV3VFLSK4Ew"
-                                    status="Registered"
+                                    status="Kayıtlı"
                                     statusColor="bg-blue-50 text-blue-700 border-blue-200"
                                     onClick={() => navigate('/patients', { state: { patientId: patient.id } })}
                                 />
@@ -164,7 +163,7 @@ const PatientCard = ({ name, id, time, scanType, image, status, statusColor, sta
                 </p>
             </div>
             <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                <span className="text-xs font-medium text-slate-500">Scan: {scanType}</span>
+                <span className="text-xs font-medium text-slate-500">Tarama: {scanType}</span>
                 <span className="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">arrow_forward</span>
             </div>
         </div>

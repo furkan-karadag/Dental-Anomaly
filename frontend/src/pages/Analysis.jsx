@@ -10,11 +10,12 @@ const Analysis = () => {
     const queryParams = new URLSearchParams(location.search);
     // Support pre-selecting patient via URL or navigation state
     const initialPatientId = queryParams.get('patientId') || location.state?.patientId;
+    const initialFilter = queryParams.get('filter') || 'all';
 
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [patients, setPatients] = useState([]);
     const [analyses, setAnalyses] = useState([]);
-    const [filterMode, setFilterMode] = useState('all');
+    const [filterMode, setFilterMode] = useState(initialFilter);
     const [selectedDisease, setSelectedDisease] = useState('');
     const [isAdvancedFilterOpen, setIsAdvancedFilterOpen] = useState(false);
     const [filterPatientName, setFilterPatientName] = useState('');
@@ -24,7 +25,7 @@ const Analysis = () => {
 
     // New Patient Form State
     const [showNewPatientForm, setShowNewPatientForm] = useState(false);
-    const [showSelectPatientModal, setShowSelectPatientModal] = useState(false);
+    const [showSelectPatientModal, setShowSelectPatientModal] = useState(queryParams.get('action') === 'new');
     const [newPatientv, setNewPatientv] = useState({ ad: '', soyad: '', tc_no: '' });
 
     const [imageSrc, setImageSrc] = useState(null);
@@ -186,14 +187,14 @@ const Analysis = () => {
 
         if (filterStartDate) {
             const startD = new Date(filterStartDate);
-            startD.setHours(0,0,0,0);
+            startD.setHours(0, 0, 0, 0);
             const aDate = parseBackendDate(a.tarih);
             if (aDate && aDate < startD) return false;
         }
 
         if (filterEndDate) {
             const endD = new Date(filterEndDate);
-            endD.setHours(23,59,59,999);
+            endD.setHours(23, 59, 59, 999);
             const aDate = parseBackendDate(a.tarih);
             if (aDate && aDate > endD) return false;
         }
@@ -239,9 +240,9 @@ const Analysis = () => {
                                 <label className="text-[0.65rem] font-bold text-on-surface-variant uppercase tracking-wider font-headline ml-1">Kişi Ara</label>
                                 <div className="relative">
                                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
-                                    <input 
-                                        type="text" 
-                                        placeholder="İsim, Soyisim, TC..." 
+                                    <input
+                                        type="text"
+                                        placeholder="İsim, Soyisim, TC..."
                                         value={filterPatientName}
                                         onChange={(e) => setFilterPatientName(e.target.value)}
                                         className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-outline/50 bg-surface focus:outline-none focus:border-primary/50 text-on-surface transition-colors font-body placeholder:text-on-surface-variant/50"
@@ -252,7 +253,7 @@ const Analysis = () => {
                                 <label className="text-[0.65rem] font-bold text-on-surface-variant uppercase tracking-wider font-headline ml-1">Hastalık / Bulgu</label>
                                 <div className="relative">
                                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">medical_services</span>
-                                    <select 
+                                    <select
                                         value={selectedDisease}
                                         onChange={(e) => setSelectedDisease(e.target.value)}
                                         className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-outline/50 bg-surface focus:outline-none focus:border-primary/50 text-on-surface transition-colors font-body appearance-none cursor-pointer truncate"
@@ -265,8 +266,8 @@ const Analysis = () => {
                             </div>
                             <div className="flex flex-col gap-1.5 w-full flex-1">
                                 <label className="text-[0.65rem] font-bold text-on-surface-variant uppercase tracking-wider font-headline ml-1">Başlangıç Tarihi</label>
-                                <input 
-                                    type="date" 
+                                <input
+                                    type="date"
                                     max={filterEndDate || undefined}
                                     value={filterStartDate}
                                     onChange={(e) => setFilterStartDate(e.target.value)}
@@ -275,8 +276,8 @@ const Analysis = () => {
                             </div>
                             <div className="flex flex-col gap-1.5 w-full flex-1">
                                 <label className="text-[0.65rem] font-bold text-on-surface-variant uppercase tracking-wider font-headline ml-1">Bitiş Tarihi</label>
-                                <input 
-                                    type="date" 
+                                <input
+                                    type="date"
                                     min={filterStartDate || undefined}
                                     value={filterEndDate}
                                     onChange={(e) => setFilterEndDate(e.target.value)}
@@ -332,7 +333,7 @@ const Analysis = () => {
                                                 </td>
                                                 <td className="px-6 py-4 text-right align-middle">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => { e.stopPropagation(); navigate('/patients', { state: { patientId: analiz.hasta_id, reportId: analiz.id } }); }}
                                                             className="text-emerald-700 hover:text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
                                                         >
@@ -415,14 +416,14 @@ const Analysis = () => {
                                     <label className="block text-sm font-medium text-on-surface-variant mb-1">Ad</label>
                                     <input type="text" required
                                         className="w-full px-4 py-2 border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-body bg-surface text-on-surface"
-                                        value={newPatientv.ad} onChange={e => setNewPatientv({...newPatientv, ad: e.target.value})}
+                                        value={newPatientv.ad} onChange={e => setNewPatientv({ ...newPatientv, ad: e.target.value })}
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-on-surface-variant mb-1">Soyad</label>
                                     <input type="text" required
                                         className="w-full px-4 py-2 border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-body bg-surface text-on-surface"
-                                        value={newPatientv.soyad} onChange={e => setNewPatientv({...newPatientv, soyad: e.target.value})}
+                                        value={newPatientv.soyad} onChange={e => setNewPatientv({ ...newPatientv, soyad: e.target.value })}
                                     />
                                 </div>
                                 <div>
@@ -433,8 +434,8 @@ const Analysis = () => {
                                         pattern="\d{11}"
                                         title="TC Kimlik numarası 11 rakamdan oluşmalıdır."
                                         className="w-full px-4 py-2 border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-body bg-surface text-on-surface"
-                                        value={newPatientv.tc_no} 
-                                        onChange={e => setNewPatientv({...newPatientv, tc_no: e.target.value.replace(/\D/g, '')})}
+                                        value={newPatientv.tc_no}
+                                        onChange={e => setNewPatientv({ ...newPatientv, tc_no: e.target.value.replace(/\D/g, '') })}
                                     />
                                 </div>
                                 <div className="pt-4 flex gap-3">
@@ -457,29 +458,38 @@ const Analysis = () => {
         <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display flex flex-col h-screen overflow-hidden">
             {/* Top Navigation */}
             <header className="shrink-0 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-6 py-3 z-20">
-                <div className="flex items-center gap-4">
-                    <div className="size-8 text-primary flex items-center justify-center bg-primary/10 rounded-lg">
+                {/* Sol: Logo + Hasta Bilgisi */}
+                <div className="flex items-center gap-3">
+                    <div className="size-9 text-primary flex items-center justify-center bg-primary/10 rounded-lg shrink-0">
                         <span className="material-symbols-outlined text-2xl">dentistry</span>
                     </div>
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">DentalAI Pro</h1>
-                        {selectedPatient && (
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <span className="font-medium text-slate-700 dark:text-slate-300">Patient: {selectedPatient.ad} {selectedPatient.soyad}</span>
-                                <button onClick={handleChangePatient} className="text-primary hover:underline">(Change)</button>
+                    {selectedPatient ? (
+                        <div className="flex flex-col">
+                            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-none mb-0.5">Röntgen Analizi</p>
+                            <div className="flex items-center gap-2">
+                                <span className="text-base font-bold text-slate-900 dark:text-white">{selectedPatient.ad} {selectedPatient.soyad}</span>
+                                <span className="text-xs font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded hidden sm:inline">TC: {selectedPatient.tc_no}</span>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    ) : (
+                        <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Dental AI — Röntgen Analiz</h1>
+                    )}
                 </div>
-                <nav className="hidden md:flex items-center gap-8">
-                    <a className="text-slate-500 hover:text-primary text-sm font-medium transition-colors" href="/">Dashboard</a>
-                    <a className="text-slate-500 hover:text-primary text-sm font-medium transition-colors" href="/patients">Patients</a>
-                    <a className="text-slate-500 hover:text-primary text-sm font-medium transition-colors" href="/reports">Reports</a>
-                </nav>
-                <div className="flex items-center gap-4">
+
+                {/* Sağ: Butonlar */}
+                <div className="flex items-center gap-2">
+                    {selectedPatient && (
+                        <button
+                            onClick={handleChangePatient}
+                            className="flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-2 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">manage_accounts</span>
+                            <span className="hidden sm:inline">Hastayı Değiştir</span>
+                        </button>
+                    )}
                     <label className="cursor-pointer bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95">
                         <span className="material-symbols-outlined text-[20px]">upload_file</span>
-                        {findings.length > 0 ? "Upload Another X-Ray" : "Upload X-Ray"}
+                        <span className="hidden sm:inline">{findings.length > 0 ? "Başka Röntgen Yükle" : "Röntgen Görüntüsü Yükle"}</span>
                         <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                     </label>
                 </div>
@@ -515,8 +525,8 @@ const Analysis = () => {
                                         <div className="bg-black/80 p-6 rounded-2xl flex flex-col items-center gap-4 border border-slate-800 shadow-2xl">
                                             <span className="material-symbols-outlined text-5xl text-primary animate-spin">progress_activity</span>
                                             <div className="text-center">
-                                                <p className="text-white font-bold text-lg">Analyzing X-Ray...</p>
-                                                <p className="text-slate-400 text-sm">Detecting anomalies</p>
+                                                <p className="text-white font-bold text-lg">Röntgen Analiz Ediliyor...</p>
+                                                <p className="text-slate-400 text-sm">Anomaliler tespit ediliyor</p>
                                             </div>
                                         </div>
                                     </div>
@@ -528,9 +538,9 @@ const Analysis = () => {
                                     <span className="material-symbols-outlined text-6xl opacity-20">add_a_photo</span>
                                 </div>
                                 <div>
-                                    <p className="text-lg font-medium text-slate-400">Ready for Analysis</p>
+                                    <p className="text-lg font-medium text-slate-400">Analiz İçin Hazır</p>
                                     <p className="text-sm opacity-60 max-w-xs mx-auto mt-1">
-                                        Upload a dental X-Ray image to detect caries, cysts, and other anomalies automatically.
+                                        Diş çürükleri, kistler ve diğer anomalileri otomatik olarak tespit etmek için bir dental röntgen görüntüsü yükleyin.
                                     </p>
                                 </div>
                             </div>
@@ -544,19 +554,19 @@ const Analysis = () => {
                         <div>
                             <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 <span className="material-symbols-outlined text-primary">smart_toy</span>
-                                AI Findings
+                                YZ Bulguları
                             </h3>
-                            <p className="text-xs text-slate-500 mt-0.5">{findings.length} anomalies detected</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{findings.length} anomali tespit edildi</p>
                         </div>
-                        {findings.length > 0 && <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-bold border border-green-200">Done</span>}
+                        {findings.length > 0 && <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-bold border border-green-200">Tamamlandı</span>}
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-3">
                         {findings.length === 0 && !isAnalyzing ? (
                             <div className="flex flex-col items-center justify-center h-48 text-center px-4">
                                 <span className="material-symbols-outlined text-4xl text-slate-200 mb-2">content_paste_off</span>
-                                <p className="text-sm text-slate-400">No findings to display yet.</p>
-                                <p className="text-xs text-slate-500 mt-1">Upload an image to see results.</p>
+                                <p className="text-sm text-slate-400">Henüz bulgu görüntülenecek bir şey yok.</p>
+                                <p className="text-xs text-slate-500 mt-1">Sonuçları görmek için bir görüntü yükleyin.</p>
                             </div>
                         ) : (
                             findings.map((finding, index) => (
@@ -564,8 +574,8 @@ const Analysis = () => {
                                     key={index}
                                     color={finding.class.toLowerCase().includes('caries') ? 'rose' : 'amber'}
                                     type={finding.class}
-                                    tooth="Unknown"
-                                    description={`Confidence: ${finding.confidence}%`}
+                                    tooth="Tespit Edildi"
+                                    description={`Güven: ${finding.confidence}%`}
                                     confidence={`${finding.confidence}%`}
                                 />
                             ))
@@ -573,9 +583,9 @@ const Analysis = () => {
                     </div>
                     {findings.length > 0 && (
                         <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-                            <button onClick={() => navigate('/patients')} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-sm font-bold text-slate-600 dark:text-slate-300 transition-colors">
+                            <button onClick={() => navigate('/patients', { state: { patientId: selectedPatient?.id } })} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-sm font-bold text-slate-600 dark:text-slate-300 transition-colors">
                                 <span className="material-symbols-outlined">save</span>
-                                Save & View in History
+                                Kaydet ve Geçmişte Görüntüle
                             </button>
                         </div>
                     )}

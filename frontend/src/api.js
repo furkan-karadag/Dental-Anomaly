@@ -53,5 +53,10 @@ export const getDashboardStats = async () => {
     return response.data;
 };
 
+export const getMe = async () => {
+    const response = await api.get("/users/me");
+    return response.data;
+};
+
 export { api };
 export default api;

@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Patients from "./pages/Patients";
-import Reports from "./pages/Reports";
 import Dashboard from "./pages/Dashboard";
 import Analysis from "./pages/Analysis";
 import Profile from "./pages/Profile";
@@ -36,12 +35,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/analysis" element={<Analysis />} />
           <Route path="/patients" element={<Patients />} />
-          <Route path="/reports" element={<Reports />} />
-
-          {/* Legacy Pages - might need refactoring later */}
-          <Route element={<LegacyLayout />}>
-            <Route path="/profile" element={<Profile />} />
-          </Route>
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
     </BrowserRouter>

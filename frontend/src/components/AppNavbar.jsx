@@ -1,16 +1,24 @@
 import { Container, Navbar, Nav, Button } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { BoxArrowRight, PersonCircle, HouseDoor, People } from "react-bootstrap-icons";
+import useConfirm from "../hooks/useConfirm";
 
 function AppNavbar() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { confirm } = useConfirm();
 
     // Basit bir aktif link belirteci
     const isActive = (path) => location.pathname === path;
 
-    const handleLogout = () => {
-        if (window.confirm("Çıkış yapmak istediğinize emin misiniz?")) {
+    const handleLogout = async () => {
+        const isConfirmed = await confirm({
+            title: 'Çıkış Yap',
+            message: 'Çıkış yapmak istediğinize emin misiniz?',
+            confirmText: 'Çıkış Yap',
+            cancelText: 'İptal'
+        });
+        if (isConfirmed) {
             localStorage.removeItem("token");
             navigate("/login");
         }
