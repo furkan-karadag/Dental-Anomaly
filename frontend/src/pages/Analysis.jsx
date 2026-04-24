@@ -3,10 +3,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { analyzeImage, getPatients, getTumAnalizler, createPatient, api } from '../api';
 import toast from 'react-hot-toast';
 import DashboardLayout from '../components/DashboardLayout';
+import useNotifications from '../hooks/useNotifications';
 
 const Analysis = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { addNotification } = useNotifications();
     const queryParams = new URLSearchParams(location.search);
     // Support pre-selecting patient via URL or navigation state
     const initialPatientId = queryParams.get('patientId') || location.state?.patientId;
@@ -102,6 +104,11 @@ const Analysis = () => {
             setShowNewPatientForm(false);
             setNewPatientv({ ad: '', soyad: '', tc_no: '' });
             toast.success("Patient created successfully");
+            addNotification(
+                "Yeni Hasta Eklendi", 
+                `${newPatientv.ad} ${newPatientv.soyad} adlı hasta sisteme başarıyla kaydedildi.`,
+                "success"
+            );
         } catch (error) {
             toast.error("Failed to create patient: " + error.message);
         }
@@ -130,6 +137,11 @@ const Analysis = () => {
             }
             // Navigate to patient history after success? Or stay? Stay for now.
             toast.success("Analysis complete");
+            addNotification(
+                "Yeni Analiz Tamamlandı", 
+                `${selectedPatient.ad} ${selectedPatient.soyad} için röntgen analizi başarıyla sonuçlandı.`,
+                "success"
+            );
         } catch (error) {
             console.error("Analysis failed", error);
             toast.error("Analysis failed. See console.");
@@ -459,10 +471,26 @@ const Analysis = () => {
             {/* Top Navigation */}
             <header className="shrink-0 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-6 py-3 z-20">
                 {/* Sol: Logo + Hasta Bilgisi */}
-                <div className="flex items-center gap-3">
-                    <div className="size-9 text-primary flex items-center justify-center bg-primary/10 rounded-lg shrink-0">
-                        <span className="material-symbols-outlined text-2xl">dentistry</span>
-                    </div>
+                <div className="flex items-center gap-4">
+                    {/* Tıklanabilir Logo */}
+                    <button
+                        onClick={() => navigate('/')}
+                        className="flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                        title="Ana Sayfaya Git"
+                    >
+                        <div className="size-9 text-primary flex items-center justify-center bg-primary/10 rounded-lg shrink-0">
+                            <span className="material-symbols-outlined text-2xl">dentistry</span>
+                        </div>
+                        <div className="flex flex-col hidden sm:flex">
+                            <span className="text-sm font-bold text-slate-900 dark:text-white leading-tight">Dental AI</span>
+                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-none">Tanı Sistemi</span>
+                        </div>
+                    </button>
+
+                    {/* Ayraç */}
+                    <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+
+                    {/* Hasta Bilgisi */}
                     {selectedPatient ? (
                         <div className="flex flex-col">
                             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider leading-none mb-0.5">Röntgen Analizi</p>
@@ -472,7 +500,7 @@ const Analysis = () => {
                             </div>
                         </div>
                     ) : (
-                        <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Dental AI — Röntgen Analiz</h1>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 hidden sm:block">Röntgen Analiz Sistemi</p>
                     )}
                 </div>
 

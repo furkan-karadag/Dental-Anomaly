@@ -61,7 +61,7 @@ const Dashboard = () => {
                         icon="auto_awesome"
                         iconColor="text-amber-600"
                         iconBg="bg-amber-50 dark:bg-amber-900/30"
-                        label="Tespit Edilen Sorun"
+                        label="Tespit Edilen Bulgular"
                         value={<>{stats.pending_ai} <span className="text-sm font-normal text-text-sub">İnceleme bekliyor</span></>}
                         onClick={() => navigate('/patients')}
                     />

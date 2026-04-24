@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useConfirm from '../hooks/useConfirm';
 import { getMe, getPatients } from '../api';
+import useNotifications from '../hooks/useNotifications';
 
 const DashboardLayout = ({ children, user: externalUser }) => {
     const [user, setUser] = useState(externalUser || null);
@@ -13,6 +14,7 @@ const DashboardLayout = ({ children, user: externalUser }) => {
     const [showSearchDropdown, setShowSearchDropdown] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const { notifications, removeNotification, clearAllNotifications, markAsRead } = useNotifications();
     const navigate = useNavigate();
     const location = useLocation();
     const { confirm } = useConfirm();
@@ -123,15 +125,21 @@ const DashboardLayout = ({ children, user: externalUser }) => {
                 <div className="flex flex-col h-full bg-white dark:bg-slate-900">
                     {/* Logo Area */}
                     <div className="flex items-center gap-3 px-6 py-8 shrink-0">
-                        <div className="flex items-center justify-center bg-primary/10 rounded-lg size-10 text-primary shrink-0">
-                            <span className="material-symbols-outlined text-3xl">dentistry</span>
-                        </div>
-                        {(sidebarOpen || mobileMenuOpen) && (
-                            <div className="flex flex-col animate-fadeIn">
-                                <h1 className="text-text-main dark:text-white text-lg font-bold leading-tight">Dental AI</h1>
-                                <p className="text-text-sub text-xs font-medium uppercase tracking-wider">Tanı Sistemi</p>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                            title="Ana Sayfaya Git"
+                        >
+                            <div className="flex items-center justify-center bg-primary/10 rounded-lg size-10 text-primary shrink-0">
+                                <span className="material-symbols-outlined text-3xl">dentistry</span>
                             </div>
-                        )}
+                            {(sidebarOpen || mobileMenuOpen) && (
+                                <div className="flex flex-col animate-fadeIn">
+                                    <h1 className="text-text-main dark:text-white text-lg font-bold leading-tight">Dental AI</h1>
+                                    <p className="text-text-sub text-xs font-medium uppercase tracking-wider">Tanı Sistemi</p>
+                                </div>
+                            )}
+                        </button>
                         {/* Mobile Close Button */}
                         <button
                             onClick={() => setMobileMenuOpen(false)}
@@ -259,18 +267,59 @@ const DashboardLayout = ({ children, user: externalUser }) => {
                                 className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
                             >
                                 <span className="material-symbols-outlined">notifications</span>
-                                <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+                                {notifications.some(n => !n.read) && (
+                                    <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+                                )}
                             </button>
 
                             {showNotifications && (
                                 <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-50 overflow-hidden">
                                     <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
                                         <h3 className="font-semibold text-slate-800 dark:text-white text-sm">Bildirimler</h3>
-                                        <span className="text-xs text-slate-400">Tümü</span>
+                                        {notifications.length > 0 && (
+                                            <button 
+                                                onClick={clearAllNotifications}
+                                                className="text-xs text-primary hover:text-primary-dark font-medium"
+                                            >
+                                                Tümünü Temizle
+                                            </button>
+                                        )}
                                     </div>
-                                    <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                                        <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">notifications_off</span>
-                                        <p className="text-slate-400 text-sm">Henüz bildirim yok</p>
+                                    <div className="max-h-[400px] overflow-y-auto">
+                                        {notifications.length > 0 ? (
+                                            <div className="flex flex-col">
+                                                {notifications.map(notif => (
+                                                    <div 
+                                                        key={notif.id}
+                                                        onMouseEnter={() => !notif.read && markAsRead(notif.id)}
+                                                        className={`px-4 py-3 border-b border-slate-50 dark:border-slate-700/50 flex items-start gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors relative group ${!notif.read ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}
+                                                    >
+                                                        <div className={`mt-1 size-2 rounded-full shrink-0 ${!notif.read ? 'bg-blue-500' : 'bg-transparent'}`}></div>
+                                                        <div className="flex flex-col flex-1 min-w-0">
+                                                            <p className="text-xs font-bold text-slate-800 dark:text-white truncate">{notif.title}</p>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{notif.message}</p>
+                                                            <p className="text-[10px] text-slate-400 mt-1">
+                                                                {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </p>
+                                                        </div>
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                removeNotification(notif.id);
+                                                            }}
+                                                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-all"
+                                                        >
+                                                            <span className="material-symbols-outlined text-sm">close</span>
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                                                <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">notifications_off</span>
+                                                <p className="text-slate-400 text-sm">Henüz bildirim yok</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

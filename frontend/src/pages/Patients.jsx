@@ -6,6 +6,7 @@ import { Trash } from "react-bootstrap-icons";
 import DashboardLayout from "../components/DashboardLayout";
 import useConfirm from "../hooks/useConfirm";
 import toast from "react-hot-toast";
+import useNotifications from "../hooks/useNotifications";
 
 // Backend Adresi
 const API_URL = "http://127.0.0.1:8000";
@@ -29,27 +30,29 @@ function Patients() {
     const navigate = useNavigate();
     const location = useLocation();
     const { confirm } = useConfirm();
+    const { addNotification } = useNotifications();
 
     useEffect(() => {
         hastalariGetir();
     }, []);
+
+    // Zaten /patients sayfasındayken navigate ile gelen state değişimini yakala
+    useEffect(() => {
+        const patientId = location.state?.patientId;
+        const reportId = location.state?.reportId;
+        if (!patientId || hastalar.length === 0) return;
+
+        const pat = hastalar.find(p => p.id.toString() === patientId.toString());
+        if (pat) {
+            hastaSec(pat, reportId);
+        }
+    }, [location.state, hastalar]);
 
     const hastalariGetir = async () => {
         try {
             const res = await api.get(`/patients/hastalar`);
             const patients = res.data.hastalar;
             setHastalar(patients);
-
-            // Check for initial patient/report selection
-            const initPatientId = location.state?.patientId;
-            const initReportId = location.state?.reportId;
-
-            if (initPatientId) {
-                const pat = patients.find(p => p.id.toString() === initPatientId.toString());
-                if (pat) {
-                    hastaSec(pat, initReportId);
-                }
-            }
         } catch (error) {
             console.error(error);
         }
@@ -117,6 +120,11 @@ function Patients() {
             }
             hastalariGetir();
             toast.success("Hasta başarıyla silindi");
+            addNotification(
+                "Hasta Silindi",
+                `${hasta.ad} ${hasta.soyad} adlı hasta ve tüm kayıtları sistemden silindi.`,
+                "warning"
+            );
         } catch (error) {
             toast.error("Hasta silme hatası");
         }
@@ -153,11 +161,16 @@ function Patients() {
             formData.append("tc_no", yeniHasta.tc_no);
 
             await createPatient(formData);
-            
+
             setShowAddModal(false);
             setYeniHasta({ ad: '', soyad: '', tc_no: '' });
             hastalariGetir(); // Refresh list
             toast.success("Hasta başarıyla eklendi");
+            addNotification(
+                "Yeni Hasta Eklendi",
+                `${yeniHasta.ad} ${yeniHasta.soyad} adlı hasta sisteme başarıyla kaydedildi.`,
+                "success"
+            );
         } catch (error) {
             toast.error("Hasta eklenemedi: " + error.message);
         }
@@ -217,17 +230,17 @@ function Patients() {
     };
 
     let displayedPatients = [...hastalar];
-    
+
     if (sortMode === 'newest') {
         displayedPatients.reverse();
     } else if (sortMode === 'oldest') {
         // do nothing
     } else if (sortMode === 'az') {
-        displayedPatients.sort((a,b) => a.ad.localeCompare(b.ad));
+        displayedPatients.sort((a, b) => a.ad.localeCompare(b.ad));
     } else if (sortMode === 'za') {
-        displayedPatients.sort((a,b) => b.ad.localeCompare(a.ad));
+        displayedPatients.sort((a, b) => b.ad.localeCompare(a.ad));
     }
-    
+
     if (searchTerm.trim() !== '') {
         const lowerSearch = searchTerm.toLowerCase();
         displayedPatients = displayedPatients.filter(p => {
@@ -259,7 +272,7 @@ function Patients() {
                     <div className="bg-surface border border-outline/50 rounded-xl p-2 mb-6 flex justify-end items-center shadow-sm">
                         <div className="flex gap-2 bg-surface-container-low p-1 rounded-lg w-full sm:w-auto items-center px-3 border border-outline/30">
                             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">sort</span>
-                            <select 
+                            <select
                                 className="bg-transparent border-none text-sm font-medium text-on-surface focus:ring-0 outline-none pr-8 cursor-pointer font-body py-1.5"
                                 value={sortMode}
                                 onChange={(e) => setSortMode(e.target.value)}
@@ -313,7 +326,7 @@ function Patients() {
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <button 
+                                                        <button
                                                             onClick={(e) => { e.stopPropagation(); navigate('/analysis', { state: { patientId: hasta.id } }); }}
                                                             className="text-emerald-700 hover:text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
                                                             title="Bu hastaya yeni X-Ray analizi yap"
@@ -357,7 +370,6 @@ function Patients() {
                                 <div>
                                     <h3 className="fw-bold mb-1">{seciliHasta.ad} {seciliHasta.soyad}</h3>
                                     <div className="d-flex gap-2">
-                                        <Badge bg="light" text="dark" className="border">Hasta ID: {seciliHasta.id}</Badge>
                                         <Badge bg="light" text="dark" className="border">TC: {seciliHasta.tc_no}</Badge>
                                     </div>
                                 </div>
@@ -371,10 +383,15 @@ function Patients() {
                                     <Trash className="me-1" /> Hastayı Sil
                                 </Button>
                             </div>
-                            <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mt-4">
-                                <Tab eventKey="gecmis" title={`📂 Geçmiş X-Ray Kayıtları (${gecmis.length})`} />
-                                <Tab eventKey="detay" title="🔎 Analiz Görünümü" disabled={!analizSonucu} />
-                            </Tabs>
+                            <div className="mt-4 d-flex border-bottom">
+                                <button 
+                                    onClick={() => setActiveTab("gecmis")}
+                                    className={`px-4 py-2 fw-bold transition-all border-0 bg-transparent ${activeTab === 'gecmis' ? 'text-primary border-bottom border-primary border-3' : 'text-muted hover:text-dark'}`}
+                                    style={{ borderBottom: activeTab === 'gecmis' ? '3px solid var(--bs-primary)' : 'none' }}
+                                >
+                                    📂 Geçmiş X-Ray Kayıtları ({gecmis.length})
+                                </button>
+                            </div>
                         </Card.Header>
 
                         <Card.Body className="p-4 bg-light">
@@ -411,7 +428,7 @@ function Patients() {
                                         </Row>
                                     ) : (
                                         <div className="text-center py-5">
-                                            <span className="material-symbols-outlined text-muted" style={{fontSize: "3rem"}}>image_not_supported</span>
+                                            <span className="material-symbols-outlined text-muted" style={{ fontSize: "3rem" }}>image_not_supported</span>
                                             <p className="text-muted mt-3">Bu hastaya ait analiz geçmişi bulunamadı.</p>
                                         </div>
                                     )}
@@ -420,6 +437,16 @@ function Patients() {
 
                             {activeTab === "detay" && analizSonucu && (
                                 <div className="bg-white p-4 rounded shadow-sm">
+                                    <div className="mb-4 d-flex justify-content-between align-items-center">
+                                        <h5 className="fw-bold mb-0 d-flex align-items-center gap-2">
+                                            <span className="material-symbols-outlined text-primary">visibility</span>
+                                            Analiz Detayı
+                                        </h5>
+                                        <Button variant="outline-primary" size="sm" onClick={() => setActiveTab("gecmis")} className="d-flex align-items-center gap-2">
+                                            <span className="material-symbols-outlined text-sm">arrow_back</span>
+                                            Analiz Listesine Dön
+                                        </Button>
+                                    </div>
                                     <Row className="g-4">
                                         <Col md={8}>
                                             <div className="border rounded overflow-hidden bg-dark w-100 d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
@@ -439,7 +466,7 @@ function Patients() {
                                                 <Form.Check
                                                     type="switch"
                                                     id="show-boxes"
-                                                    label="Tüm Çizimleri Sürekli Göster (Hover olmadan)"
+                                                    label="Tüm Çizimleri Sürekli Göster"
                                                     checked={showBoxes}
                                                     onChange={() => setShowBoxes(!showBoxes)}
                                                 />
@@ -449,7 +476,7 @@ function Patients() {
                                             <Card className="h-100 bg-surface-container-low border border-outline">
                                                 <Card.Body>
                                                     <h6 className="fw-bold text-dark border-bottom pb-2 mb-3 d-flex align-items-center gap-2">
-                                                        <span className="material-symbols-outlined text-primary">analytics</span> 
+                                                        <span className="material-symbols-outlined text-primary">analytics</span>
                                                         Yapay Zeka Bulguları
                                                     </h6>
                                                     {analizSonucu.rapor.length > 0 ? (
@@ -464,7 +491,7 @@ function Patients() {
                                                                     style={{ cursor: "pointer", transition: "all 0.2s" }}
                                                                 >
                                                                     <div className="d-flex align-items-start gap-2">
-                                                                        <span className="material-symbols-outlined text-warning" style={{fontSize:"18px"}}>warning</span>
+                                                                        <span className="material-symbols-outlined text-warning" style={{ fontSize: "18px" }}>warning</span>
                                                                         <span className="fw-semibold text-sm">{r}</span>
                                                                     </div>
                                                                 </ListGroup.Item>
@@ -499,14 +526,14 @@ function Patients() {
                                 <label className="block text-sm font-medium text-on-surface-variant mb-1">Ad</label>
                                 <input type="text" required
                                     className="w-full px-4 py-2 border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-body bg-surface text-on-surface"
-                                    value={yeniHasta.ad} onChange={e => setYeniHasta({...yeniHasta, ad: e.target.value})}
+                                    value={yeniHasta.ad} onChange={e => setYeniHasta({ ...yeniHasta, ad: e.target.value })}
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-on-surface-variant mb-1">Soyad</label>
                                 <input type="text" required
                                     className="w-full px-4 py-2 border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-body bg-surface text-on-surface"
-                                    value={yeniHasta.soyad} onChange={e => setYeniHasta({...yeniHasta, soyad: e.target.value})}
+                                    value={yeniHasta.soyad} onChange={e => setYeniHasta({ ...yeniHasta, soyad: e.target.value })}
                                 />
                             </div>
                             <div>
@@ -517,8 +544,8 @@ function Patients() {
                                     pattern="\d{11}"
                                     title="TC Kimlik numarası 11 rakamdan oluşmalıdır."
                                     className="w-full px-4 py-2 border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-body bg-surface text-on-surface"
-                                    value={yeniHasta.tc_no} 
-                                    onChange={e => setYeniHasta({...yeniHasta, tc_no: e.target.value.replace(/\D/g, '')})}
+                                    value={yeniHasta.tc_no}
+                                    onChange={e => setYeniHasta({ ...yeniHasta, tc_no: e.target.value.replace(/\D/g, '') })}
                                 />
                             </div>
                             <div className="pt-4 flex gap-3">
