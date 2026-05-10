@@ -15,9 +15,9 @@ const DashboardHeader = ({ user, onLogout }) => {
                     <View style={styles.onlineBadge} />
                 </View>
                 <View>
-                    <Text style={styles.greetingText}>Good Morning,</Text>
+                    <Text style={styles.greetingText}>Merhaba,</Text>
                     <Text style={styles.userNameText}>
-                        {user && user.ad ? `Dr. ${user.ad.toUpperCase()} ${user.soyad.toUpperCase()}` : 'Dr. Anderson'}
+                        {user && user.ad ? `Dr. ${user.ad.toUpperCase()} ${user.soyad.toUpperCase()}` : 'Dr. Örnek'}
                     </Text>
                 </View>
             </View>

@@ -56,8 +56,8 @@ const LoginScreen = ({ navigation }) => {
                         </LinearGradient>
                     </View>
                     <View style={styles.titleContainer}>
-                        <Text style={styles.appTitle}>DentalAI Lens</Text>
-                        <Text style={styles.welcomeText}>Hoşgeldiniz, Doktor.</Text>
+                        <Text style={styles.appTitle}>Dental AI </Text>
+                        <Text style={styles.welcomeText}>Hoşgeldiniz</Text>
                     </View>
                 </View>
 

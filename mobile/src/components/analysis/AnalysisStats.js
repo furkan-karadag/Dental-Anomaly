@@ -16,7 +16,7 @@ const AnalysisStats = ({ detections }) => {
     return (
         <View style={styles.statsGrid}>
             <View style={styles.statCard}>
-                <Text style={styles.statLabel}>OBSERVATIONS</Text>
+                <Text style={styles.statLabel}>BULGULAR</Text>
                 <View style={styles.statRow}>
                     <Text style={styles.statLarge}>{issueCount.toString().padStart(2, '0')}</Text>
                     <View style={[styles.statIcon, { backgroundColor: COLORS.orange50 }]}>
@@ -25,7 +25,7 @@ const AnalysisStats = ({ detections }) => {
                 </View>
             </View>
             <View style={styles.statCard}>
-                <Text style={styles.statLabel}>CONFIDENCE</Text>
+                <Text style={styles.statLabel}>GÜVENİLİRLİK</Text>
                 <View style={styles.statRow}>
                     <Text style={styles.statLarge}>{avgConfidence}%</Text>
                     <View style={[styles.statIcon, { backgroundColor: COLORS.blue100 }]}>

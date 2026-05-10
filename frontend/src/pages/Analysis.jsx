@@ -5,6 +5,51 @@ import toast from 'react-hot-toast';
 import DashboardLayout from '../components/DashboardLayout';
 import useNotifications from '../hooks/useNotifications';
 
+const COLORS = [
+    'rose', 'amber', 'emerald', 'blue', 'purple', 'cyan', 'fuchsia', 'indigo', 'teal', 'lime', 'pink', 'orange'
+];
+
+const KNOWN_CLASSES = {
+    'caries': 'rose',
+    'crown': 'blue',
+    'periapical lesion': 'purple',
+    'missing teeth': 'amber',
+    'filling': 'emerald',
+    'impacted tooth': 'cyan',
+};
+
+const translateClass = (className) => {
+    if (!className) return className;
+    const normalized = className.toLowerCase().trim();
+    if (normalized.includes('caries') || normalized.includes('carries')) return 'Çürük';
+    if (normalized.includes('periapical lesion') || normalized.includes('lesion')) return 'Periapikal Lezyon';
+    if (normalized.includes('filling')) return 'Dolgu';
+    if (normalized.includes('crown')) return 'Kuron';
+    if (normalized.includes('impacted tooth') || normalized.includes('impacted')) return 'Gömülü Diş';
+    if (normalized.includes('missing teeth') || normalized.includes('missing')) return 'Eksik Diş';
+    return className;
+};
+
+const getClassColor = (className) => {
+    if (!className) return 'amber';
+    const normalized = className.toLowerCase().trim();
+
+    for (const [key, color] of Object.entries(KNOWN_CLASSES)) {
+        if (normalized.includes(key)) {
+            return color;
+        }
+    }
+
+    // Fallback to hash for unknown classes
+    let hash = 0;
+    for (let i = 0; i < normalized.length; i++) {
+        hash = (hash << 5) - hash + normalized.charCodeAt(i);
+        hash |= 0; // Convert to 32bit integer
+    }
+    const index = Math.abs(hash) % COLORS.length;
+    return COLORS[index];
+};
+
 const Analysis = () => {
     const location = useLocation();
     const navigate = useNavigate();
@@ -105,7 +150,7 @@ const Analysis = () => {
             setNewPatientv({ ad: '', soyad: '', tc_no: '' });
             toast.success("Patient created successfully");
             addNotification(
-                "Yeni Hasta Eklendi", 
+                "Yeni Hasta Eklendi",
                 `${newPatientv.ad} ${newPatientv.soyad} adlı hasta sisteme başarıyla kaydedildi.`,
                 "success"
             );
@@ -138,7 +183,7 @@ const Analysis = () => {
             // Navigate to patient history after success? Or stay? Stay for now.
             toast.success("Analysis complete");
             addNotification(
-                "Yeni Analiz Tamamlandı", 
+                "Yeni Analiz Tamamlandı",
                 `${selectedPatient.ad} ${selectedPatient.soyad} için röntgen analizi başarıyla sonuçlandı.`,
                 "success"
             );
@@ -271,7 +316,7 @@ const Analysis = () => {
                                         className="w-full pl-9 pr-8 py-2 text-sm rounded-lg border border-outline/50 bg-surface focus:outline-none focus:border-primary/50 text-on-surface transition-colors font-body appearance-none cursor-pointer truncate"
                                     >
                                         <option value="">Tüm Bulgular</option>
-                                        {uniqueDiseases.map((d, i) => <option key={i} value={d}>{d}</option>)}
+                                        {uniqueDiseases.map((d, i) => <option key={i} value={d}>{translateClass(d)}</option>)}
                                     </select>
                                     <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
                                 </div>
@@ -341,7 +386,13 @@ const Analysis = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-on-surface-variant max-w-[300px] truncate" title={analiz.rapor}>
-                                                    {analiz.rapor || "Sonuç Bekleniyor"}
+                                                    {analiz.rapor ? analiz.rapor.split(', ').map(rText => {
+                                                        const parts = rText.split(' (');
+                                                        if(parts.length === 2) {
+                                                             return `${translateClass(parts[0])} (${parts[1]}`;
+                                                        }
+                                                        return translateClass(rText);
+                                                    }).join(', ') : "Sonuç Bekleniyor"}
                                                 </td>
                                                 <td className="px-6 py-4 text-right align-middle">
                                                     <div className="flex items-center justify-end gap-2">
@@ -543,8 +594,8 @@ const Analysis = () => {
                                     <BoundingBox
                                         key={index}
                                         box={finding.box}
-                                        color={finding.class.toLowerCase().includes('caries') ? 'rose' : 'amber'}
-                                        label={`${finding.class} (${finding.confidence}%)`}
+                                        color={getClassColor(finding.class)}
+                                        label={`${translateClass(finding.class)} (${finding.confidence}%)`}
                                     />
                                 ))}
 
@@ -600,8 +651,8 @@ const Analysis = () => {
                             findings.map((finding, index) => (
                                 <FindingCard
                                     key={index}
-                                    color={finding.class.toLowerCase().includes('caries') ? 'rose' : 'amber'}
-                                    type={finding.class}
+                                    color={getClassColor(finding.class)}
+                                    type={translateClass(finding.class)}
                                     tooth="Tespit Edildi"
                                     description={`Güven: ${finding.confidence}%`}
                                     confidence={`${finding.confidence}%`}
@@ -694,19 +745,37 @@ const BoundingBox = ({ box, color, label }) => {
     const colorMap = {
         rose: "border-rose-500 bg-rose-500/10 hover:bg-rose-500/30",
         amber: "border-amber-500 bg-amber-500/10 hover:bg-amber-500/30",
-        emerald: "border-emerald-500/50 bg-emerald-500/5 hover:bg-emerald-500/20"
+        emerald: "border-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/30",
+        blue: "border-blue-500 bg-blue-500/10 hover:bg-blue-500/30",
+        purple: "border-purple-500 bg-purple-500/10 hover:bg-purple-500/30",
+        cyan: "border-cyan-500 bg-cyan-500/10 hover:bg-cyan-500/30",
+        fuchsia: "border-fuchsia-500 bg-fuchsia-500/10 hover:bg-fuchsia-500/30",
+        indigo: "border-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/30",
+        teal: "border-teal-500 bg-teal-500/10 hover:bg-teal-500/30",
+        lime: "border-lime-500 bg-lime-500/10 hover:bg-lime-500/30",
+        pink: "border-pink-500 bg-pink-500/10 hover:bg-pink-500/30",
+        orange: "border-orange-500 bg-orange-500/10 hover:bg-orange-500/30"
     };
     const labelColorMap = {
         rose: "bg-rose-600",
         amber: "bg-amber-600",
-        emerald: "bg-emerald-600"
+        emerald: "bg-emerald-600",
+        blue: "bg-blue-600",
+        purple: "bg-purple-600",
+        cyan: "bg-cyan-600",
+        fuchsia: "bg-fuchsia-600",
+        indigo: "bg-indigo-600",
+        teal: "bg-teal-600",
+        lime: "bg-lime-600",
+        pink: "bg-pink-600",
+        orange: "bg-orange-600"
     };
 
     if (!style.left) return null; // Don't render if not calculated
 
     return (
-        <div className={`border-2 ${colorMap[color] || colorMap.amber} rounded-sm transition-colors cursor-pointer group/box`} style={style}>
-            <div className={`absolute -top-6 left-0 ${labelColorMap[color] || labelColorMap.amber} text-white text-[10px] px-1 py-0.5 rounded opacity-0 group-hover/box:opacity-100 transition-opacity whitespace-nowrap z-10 font-bold shadow-sm`}>
+        <div className={`border-2 ${colorMap[color] || colorMap.amber} rounded-sm transition-colors cursor-pointer group hover:bg-opacity-50`} style={style} title={label}>
+            <div className={`absolute -top-7 left-0 ${labelColorMap[color] || labelColorMap.amber} text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 font-bold shadow-md pointer-events-none`}>
                 {label}
             </div>
         </div>
@@ -717,8 +786,32 @@ const FindingCard = ({ color, type, tooth, description, confidence }) => {
     const colorMap = {
         rose: "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800",
         amber: "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
+        emerald: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",
+        blue: "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
+        purple: "bg-purple-50 text-purple-700 border-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800",
+        cyan: "bg-cyan-50 text-cyan-700 border-cyan-100 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800",
+        fuchsia: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100 dark:bg-fuchsia-900/30 dark:text-fuchsia-300 dark:border-fuchsia-800",
+        indigo: "bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800",
+        teal: "bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800",
+        lime: "bg-lime-50 text-lime-700 border-lime-100 dark:bg-lime-900/30 dark:text-lime-300 dark:border-lime-800",
+        pink: "bg-pink-50 text-pink-700 border-pink-100 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800",
+        orange: "bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800"
     };
-    const barColor = color === 'rose' ? 'bg-rose-500' : 'bg-amber-500';
+    const barColorMap = {
+        rose: "bg-rose-500",
+        amber: "bg-amber-500",
+        emerald: "bg-emerald-500",
+        blue: "bg-blue-500",
+        purple: "bg-purple-500",
+        cyan: "bg-cyan-500",
+        fuchsia: "bg-fuchsia-500",
+        indigo: "bg-indigo-500",
+        teal: "bg-teal-500",
+        lime: "bg-lime-500",
+        pink: "bg-pink-500",
+        orange: "bg-orange-500"
+    };
+    const barColor = barColorMap[color] || "bg-amber-500";
 
     return (
         <div className="group bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:border-primary hover:shadow-md transition-all cursor-pointer relative overflow-hidden">

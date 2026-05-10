@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { COLORS, getClassColorHex, translateClass } from '../../theme/colors';
 import { styles } from '../../screens/AnalysisDetailScreen.styles';
 
 const FindingsList = ({
@@ -18,8 +18,8 @@ const FindingsList = ({
         <View style={styles.findingsSection}>
             <View style={styles.sectionHeader}>
                 <View>
-                    <Text style={styles.sectionTitle}>Detailed Findings</Text>
-                    <Text style={styles.sectionSubtitle}>Radiological Scan Results</Text>
+                    <Text style={styles.sectionTitle}>Detaylı Bulgular</Text>
+                    <Text style={styles.sectionSubtitle}>Radyolojik Tarama Sonuçları</Text>
                 </View>
                 <Text style={styles.dateText}>{date}</Text>
             </View>
@@ -27,21 +27,16 @@ const FindingsList = ({
             <View style={styles.findingsList}>
                 {realDetections.map((item, index) => {
                     const isHealthy = item.class.toLowerCase().includes('healthy');
-                    const isAbscess = item.class.toLowerCase().includes('abscess');
-                    const isCarries = item.class.toLowerCase().includes('carries');
+                    const isCarries = item.class.toLowerCase().includes('carries') || item.class.toLowerCase().includes('caries');
 
                     // Determine styles based on type
-                    let color = COLORS.medicalBlue;
-                    let bgColor = COLORS.medicalSoft;
+                    let color = getClassColorHex(item.class);
+                    let bgColor = `${color}15`;
                     let icon = "healing";
 
-                    if (isAbscess || isCarries) {
-                        color = COLORS.abscessOrange;
-                        bgColor = COLORS.orange50;
+                    if (isCarries) {
                         icon = "medical-services";
                     } else if (isHealthy) {
-                        color = COLORS.emerald600;
-                        bgColor = COLORS.emerald50;
                         icon = "check-circle";
                     }
 
@@ -54,6 +49,7 @@ const FindingsList = ({
                             style={[
                                 styles.findingCard,
                                 isHealthy && styles.healthyCard,
+                                { borderLeftWidth: 4, borderLeftColor: color },
                                 isSelected && { borderColor: color, transform: [{ scale: 1.02 }] },
                                 (anySelected && !isSelected) && { opacity: 0.5 }
                             ]}
@@ -65,9 +61,9 @@ const FindingsList = ({
                                     <MaterialIcons name={icon} size={24} color={color} />
                                 </View>
                                 <View>
-                                    <Text style={styles.findingTitle}>{item.class}</Text>
+                                    <Text style={styles.findingTitle}>{translateClass(item.class)}</Text>
                                     <Text style={styles.findingDesc}>
-                                        {isHealthy ? "Healthy Structure" : "Detected Issue"}
+                                        {isHealthy ? "Sağlıklı Yapı" : "Anomali Tespit Edildi"}
                                     </Text>
                                 </View>
                             </View>
@@ -75,7 +71,7 @@ const FindingsList = ({
                             <View style={styles.findingRight}>
                                 <View style={{ alignItems: 'flex-end' }}>
                                     <Text style={[styles.percentText, { color }]}>{item.confidence}%</Text>
-                                    <Text style={styles.probLabel}>PROB.</Text>
+                                    <Text style={styles.probLabel}>ORAN</Text>
                                 </View>
                                 <MaterialIcons name="chevron-right" size={24} color={COLORS.slate300} />
                             </View>
@@ -85,7 +81,7 @@ const FindingsList = ({
 
                 {realDetections.length === 0 && (
                     <View style={styles.emptyBox}>
-                        <Text style={styles.emptyText}>{reportText || "No detailed findings available."}</Text>
+                        <Text style={styles.emptyText}>{reportText || "Detaylı bulgu bulunmuyor."}</Text>
                     </View>
                 )}
             </View>

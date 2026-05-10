@@ -41,7 +41,7 @@ const AnalysisDetailScreen = ({ route, navigation }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <MaterialIcons name="arrow-back-ios" size={20} color={COLORS.slate500} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>AI Diagnosis Report</Text>
+                <Text style={styles.headerTitle}>YZ Tanı Raporu</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -89,13 +89,13 @@ const AnalysisDetailScreen = ({ route, navigation }) => {
                             style={[styles.toggleButton, viewMode === 'ai' && styles.toggleButtonActive]}
                             onPress={() => { setViewMode('ai'); setSelectedDetectionIndex(null); }}
                         >
-                            <Text style={[styles.toggleText, viewMode === 'ai' && styles.toggleTextActive]}>AI Analysis</Text>
+                            <Text style={[styles.toggleText, viewMode === 'ai' && styles.toggleTextActive]}>YZ Analizi</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.toggleButton, viewMode === 'original' && styles.toggleButtonActive]}
                             onPress={() => { setViewMode('original'); setSelectedDetectionIndex(null); }}
                         >
-                            <Text style={[styles.toggleText, viewMode === 'original' && styles.toggleTextActive]}>Original</Text>
+                            <Text style={[styles.toggleText, viewMode === 'original' && styles.toggleTextActive]}>Orijinal</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -120,9 +120,9 @@ const AnalysisDetailScreen = ({ route, navigation }) => {
             <View style={styles.footer}>
                 <TouchableOpacity style={styles.downloadButton}>
                     <MaterialIcons name="picture-as-pdf" size={24} color="white" />
-                    <Text style={styles.downloadButtonText}>Download PDF Report</Text>
+                    <Text style={styles.downloadButtonText}>PDF Raporunu İndir</Text>
                 </TouchableOpacity>
-                <Text style={styles.versionText}>Medical Grade AI Analysis • v2.4.0</Text>
+                <Text style={styles.versionText}>Tıbbi Sınıf YZ Analizi • v2.4.0</Text>
             </View>
 
             {/* Full Screen Modal */}

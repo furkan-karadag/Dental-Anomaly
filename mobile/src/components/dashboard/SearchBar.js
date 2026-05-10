@@ -3,15 +3,17 @@ import { View, TextInput, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 
-const SearchBar = ({ style }) => {
+const SearchBar = ({ style, value, onChangeText }) => {
     return (
         <View style={[styles.searchContainer, style]}>
             <View style={styles.searchWrapper}>
                 <MaterialIcons name="search" size={24} color={COLORS.slate400} style={styles.searchIcon} />
                 <TextInput
-                    placeholder="Search patients by name or ID..."
+                    placeholder="İsim veya kimlik numarası ile hasta ara..."
                     placeholderTextColor={COLORS.slate400}
                     style={styles.searchInput}
+                    value={value}
+                    onChangeText={onChangeText}
                 />
             </View>
         </View>

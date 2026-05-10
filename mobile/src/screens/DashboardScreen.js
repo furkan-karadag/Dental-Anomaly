@@ -7,12 +7,14 @@ import {
     Dimensions,
     View,
     RefreshControl,
-    TouchableOpacity
+    TouchableOpacity,
+    Alert
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
 import { AuthContext } from "../context/AuthContext";
 import { getPatients, getDashboardStats } from '../services/patientService';
+import { pickImage, pickDocument, uploadXray } from '../services/analysisService';
 import { COLORS } from '../theme/colors';
 
 // Components
@@ -21,6 +23,7 @@ import SearchBar from '../components/dashboard/SearchBar';
 import StatsSection from '../components/dashboard/StatsSection';
 import RecentPatientsList from '../components/dashboard/RecentPatientsList';
 import DashboardBottomNav from '../components/dashboard/DashboardBottomNav';
+import PatientSelectModal from '../components/dashboard/PatientSelectModal';
 
 const DashboardScreen = ({ navigation }) => {
     const { userInfo, logout } = useContext(AuthContext);
@@ -28,6 +31,9 @@ const DashboardScreen = ({ navigation }) => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showPatientSelect, setShowPatientSelect] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     // Initial fetch and focus effect
     const loadData = async () => {
@@ -72,37 +78,86 @@ const DashboardScreen = ({ navigation }) => {
                 bg: COLORS.blue100,
                 text: COLORS.blue700,
                 icon: "sync",
-                label: "Processing",
+                label: "İşleniyor",
             };
         } else if (s.includes('cavity') || s.includes('issue') || s.includes('alert')) {
             return {
                 bg: COLORS.red100,
                 text: COLORS.red700,
                 icon: "warning",
-                label: "Action Needed",
+                label: "Müdahale Gerekli",
             };
         } else if (s.includes('review') || s.includes('ready')) {
             return {
                 bg: COLORS.purple100,
                 text: COLORS.purple700,
                 icon: "auto-awesome",
-                label: "Analysis Ready",
+                label: "Analiz Hazır",
             };
         } else if (s.includes('routine')) {
             return {
                 bg: COLORS.slate100,
                 text: COLORS.slate500,
                 icon: "calendar-today",
-                label: "Routine Checkup",
+                label: "Rutin Kontrol",
             };
         }
         return {
             bg: COLORS.green100,
             text: COLORS.green700,
             icon: "check-circle",
-            label: "Healthy",
+            label: "Sağlıklı",
         };
     };
+
+    const handleUploadProcess = async (patient) => {
+        Alert.alert(
+            "Fotoğraf Yükle",
+            "Lütfen görselin kaynağını seçin:",
+            [
+                { text: "İptal", style: "cancel" },
+                { text: "📁 Dosyalardan", onPress: () => processUpload(patient, pickDocument) },
+                { text: "📷 Galeriden", onPress: () => processUpload(patient, pickImage) }
+            ]
+        );
+    };
+
+    const processUpload = async (patient, pickerFunc) => {
+        try {
+            const uri = await pickerFunc();
+            if (!uri) return;
+
+            setUploading(true);
+            Alert.alert("Analiz Başlıyor", "Fotoğraf yükleniyor ve analiz ediliyor, lütfen bekleyin...");
+
+            const result = await uploadXray(patient.id, uri);
+            
+            if (result.durum === "Analiz Tamamlandı") {
+                Alert.alert("Başarılı", "Analiz tamamlandı!");
+                loadData(); // Refresh dashboard
+                navigation.navigate('PatientDetail', { patientId: patient.id, item: patient });
+            } else {
+                Alert.alert("Hata", result.hata || "Analiz sırasında bir hata oluştu.");
+            }
+        } catch (error) {
+            Alert.alert("Hata", "Bir sorun oluştu.");
+            console.error(error);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const filteredPatients = patients.filter(p => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase().trim();
+        const ad = p.ad ? p.ad.toLowerCase() : "";
+        const soyad = p.soyad ? p.soyad.toLowerCase() : "";
+        const tc = p.tc_no ? String(p.tc_no) : "";
+        
+        return ad.includes(q) || soyad.includes(q) || tc.includes(q) || `${ad} ${soyad}`.includes(q);
+    });
+
+    const displayedPatients = searchQuery ? filteredPatients : filteredPatients.slice(0, 5);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -118,15 +173,19 @@ const DashboardScreen = ({ navigation }) => {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 >
                     {/* Search Bar */}
-                    <SearchBar />
+                    <SearchBar 
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                    />
 
                     {/* Stats Section */}
-                    <StatsSection stats={stats} />
+                    {!searchQuery && <StatsSection stats={stats} />}
 
                     {/* Recent Patients List */}
                     <RecentPatientsList
-                        patients={patients}
+                        patients={displayedPatients}
                         loading={loading}
+                        isSearching={!!searchQuery}
                         navigation={navigation}
                         getStatusStyle={getStatusStyle}
                     />
@@ -144,7 +203,21 @@ const DashboardScreen = ({ navigation }) => {
                 </TouchableOpacity>
 
                 {/* Custom Bottom Navigation */}
-                <DashboardBottomNav />
+                <DashboardBottomNav 
+                    onUploadPress={() => setShowPatientSelect(true)}
+                    onSettingsPress={() => navigation.navigate('Settings')}
+                />
+
+                <PatientSelectModal
+                    visible={showPatientSelect}
+                    onClose={() => setShowPatientSelect(false)}
+                    patients={patients}
+                    loading={loading}
+                    onSelect={(patient) => {
+                        setShowPatientSelect(false);
+                        handleUploadProcess(patient);
+                    }}
+                />
 
             </View>
         </SafeAreaView>

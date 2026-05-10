@@ -14,11 +14,11 @@ const StatsSection = ({ stats }) => {
                     <View style={[styles.iconBox, { backgroundColor: COLORS.blue100 }]}>
                         <MaterialIcons name="groups" size={20} color={COLORS.blue700} />
                     </View>
-                    <Text style={styles.statLabel}>Total Patients</Text>
+                    <Text style={styles.statLabel}>Toplam Hasta</Text>
                     <Text style={styles.statValue}>{total_patients}</Text>
                     <View style={styles.trendBox}>
                         <MaterialIcons name="trending-up" size={16} color={COLORS.green500} />
-                        <Text style={styles.trendText}>Active</Text>
+                        <Text style={styles.trendText}>Aktif</Text>
                     </View>
                 </View>
 
@@ -28,9 +28,9 @@ const StatsSection = ({ stats }) => {
                     <View style={[styles.iconBox, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
                         <MaterialIcons name="auto-awesome" size={20} color={COLORS.white} />
                     </View>
-                    <Text style={[styles.statLabel, { color: "rgba(255,255,255,0.8)" }]}>Issues Found</Text>
+                    <Text style={[styles.statLabel, { color: "rgba(255,255,255,0.8)" }]}>Bulgu Tespit Edildi</Text>
                     <Text style={[styles.statValue, { color: COLORS.white }]}>{pending_ai}</Text>
-                    <Text style={[styles.trendText, { color: "rgba(255,255,255,0.8)", marginTop: 4 }]}>Requires review</Text>
+                    <Text style={[styles.trendText, { color: "rgba(255,255,255,0.8)", marginTop: 4 }]}>İnceleme bekliyor</Text>
                 </View>
 
                 {/* Done Today */}
@@ -38,9 +38,9 @@ const StatsSection = ({ stats }) => {
                     <View style={[styles.iconBox, { backgroundColor: COLORS.green100 }]}>
                         <MaterialIcons name="check-circle" size={20} color={COLORS.green700} />
                     </View>
-                    <Text style={styles.statLabel}>Today's Scans</Text>
+                    <Text style={styles.statLabel}>Bugünkü Taramalar</Text>
                     <Text style={styles.statValue}>{done_today}</Text>
-                    <Text style={[styles.trendText, { color: COLORS.slate400 }]}>Processed</Text>
+                    <Text style={[styles.trendText, { color: COLORS.slate400 }]}>İşlendi</Text>
                 </View>
             </ScrollView>
         </View>

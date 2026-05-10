@@ -3,20 +3,20 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 
-const DashboardBottomNav = () => {
+const DashboardBottomNav = ({ onUploadPress, onSettingsPress }) => {
     return (
         <View style={styles.bottomNav}>
             <TouchableOpacity style={styles.navItem} onPress={() => { }}>
                 <MaterialIcons name="dashboard" size={24} color={COLORS.primary} />
-                <Text style={[styles.navText, { color: COLORS.primary }]}>Home</Text>
+                <Text style={[styles.navText, { color: COLORS.primary }]}>Ana Sayfa</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.navItem} onPress={() => { }}>
+            <TouchableOpacity style={styles.navItem} onPress={onUploadPress}>
                 <MaterialIcons name="cloud-upload" size={24} color={COLORS.slate400} />
-                <Text style={styles.navText}>Upload</Text>
+                <Text style={styles.navText}>Yükle</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.navItem} onPress={() => { }}>
+            <TouchableOpacity style={styles.navItem} onPress={onSettingsPress}>
                 <MaterialIcons name="settings" size={24} color={COLORS.slate400} />
-                <Text style={styles.navText}>Settings</Text>
+                <Text style={styles.navText}>Ayarlar</Text>
             </TouchableOpacity>
         </View>
     );

@@ -3,23 +3,25 @@ import { View, Text, TouchableOpacity, Image, ActivityIndicator, StyleSheet } fr
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../theme/colors';
 
-const RecentPatientsList = ({ patients, loading, navigation, getStatusStyle }) => {
+const RecentPatientsList = ({ patients, loading, navigation, getStatusStyle, isSearching }) => {
     return (
         <View style={styles.listSection}>
             <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Recent Patients</Text>
-                <TouchableOpacity>
-                    <Text style={styles.viewAllText}>View All</Text>
-                </TouchableOpacity>
+                <Text style={styles.sectionTitle}>{isSearching ? "Arama Sonuçları" : "Son Hastalar"}</Text>
+                {!isSearching && (
+                    <TouchableOpacity>
+                        <Text style={styles.viewAllText}>Tümünü Gör</Text>
+                    </TouchableOpacity>
+                )}
             </View>
 
             <View style={styles.listContainer}>
                 {loading ? (
                     <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
                 ) : (
-                    patients.slice(0, 5).map((patient, index) => {
+                    patients.map((patient, index) => {
                         // Use real status from backend, fallback to 'routine'
-                        const statusStr = patient.status || 'Routine Checkup';
+                        const statusStr = patient.status || 'Rutin Kontrol';
                         const statusConfig = getStatusStyle(statusStr);
 
                         return (
@@ -44,7 +46,7 @@ const RecentPatientsList = ({ patients, loading, navigation, getStatusStyle }) =
                                         </View>
                                     </View>
                                     <Text style={styles.lastVisit}>
-                                        {patient.son_tarih ? `Last Scan: ${patient.son_tarih}` : 'No records yet'}
+                                        {patient.son_tarih ? `Son Tarama: ${patient.son_tarih}` : 'Henüz kayıt yok'}
                                     </Text>
                                     <Text style={styles.patientId}>
                                         ID: #{patient.id} • {statusConfig.label}
@@ -58,7 +60,7 @@ const RecentPatientsList = ({ patients, loading, navigation, getStatusStyle }) =
                 )}
                 {!loading && patients.length === 0 && (
                     <View style={{ alignItems: 'center', marginTop: 20 }}>
-                        <Text style={{ color: COLORS.slate500 }}>No patients found.</Text>
+                        <Text style={{ color: COLORS.slate500 }}>Hasta bulunamadı.</Text>
                     </View>
                 )}
             </View>

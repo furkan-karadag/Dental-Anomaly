@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { login as loginService, register as registerService, getMe } from '../services/authService';
+import { login as loginService, register as registerService, getMe, updateMe } from '../services/authService';
 
 export const AuthContext = createContext();
 
@@ -41,6 +41,26 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateUserInfo = async (data) => {
+        try {
+            setIsLoading(true);
+            const updatedUser = await updateMe(data);
+            if (updatedUser) {
+                setUserInfo({
+                    ...userInfo,
+                    ad: updatedUser.ad,
+                    soyad: updatedUser.soyad
+                });
+            }
+            return updatedUser;
+        } catch (error) {
+            console.error('Update profile error:', error);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const logout = async () => {
         setIsLoading(true);
         await SecureStore.deleteItemAsync('userToken');
@@ -75,7 +95,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     return (
-        <AuthContext.Provider value={{ login, register, logout, isLoading, userToken, userInfo }}>
+        <AuthContext.Provider value={{ login, register, logout, updateUserInfo, isLoading, userToken, userInfo }}>
             {children}
         </AuthContext.Provider>
     );

@@ -11,6 +11,63 @@ import useNotifications from "../hooks/useNotifications";
 // Backend Adresi
 const API_URL = "http://127.0.0.1:8000";
 
+const HEX_COLORS = {
+    rose: '#f43f5e',
+    amber: '#f59e0b',
+    emerald: '#10b981',
+    blue: '#3b82f6',
+    purple: '#a855f7',
+    cyan: '#06b6d4',
+    fuchsia: '#d946ef',
+    indigo: '#6366f1',
+    teal: '#14b8a6',
+    lime: '#84cc16',
+    pink: '#ec4899',
+    orange: '#f97316'
+};
+
+const COLORS_ARRAY = Object.values(HEX_COLORS);
+
+const KNOWN_CLASSES = {
+    'caries': 'rose',
+    'crown': 'blue',
+    'periapical lesion': 'purple',
+    'missing teeth': 'amber',
+    'filling': 'emerald',
+    'impacted tooth': 'cyan',
+};
+
+const translateClass = (className) => {
+    if (!className) return className;
+    const normalized = className.toLowerCase().trim();
+    if (normalized.includes('caries') || normalized.includes('carries')) return 'Çürük';
+    if (normalized.includes('periapical lesion') || normalized.includes('lesion')) return 'Periapikal Lezyon';
+    if (normalized.includes('filling')) return 'Dolgu';
+    if (normalized.includes('crown')) return 'Kuron';
+    if (normalized.includes('impacted tooth') || normalized.includes('impacted')) return 'Gömülü Diş';
+    if (normalized.includes('missing teeth') || normalized.includes('missing')) return 'Eksik Diş';
+    return className;
+};
+
+const getClassColorHex = (className) => {
+    if (!className) return HEX_COLORS.amber;
+    const normalized = className.toLowerCase().trim();
+
+    for (const [key, colorStr] of Object.entries(KNOWN_CLASSES)) {
+        if (normalized.includes(key)) {
+            return HEX_COLORS[colorStr];
+        }
+    }
+
+    let hash = 0;
+    for (let i = 0; i < normalized.length; i++) {
+        hash = (hash << 5) - hash + normalized.charCodeAt(i);
+        hash |= 0;
+    }
+    const index = Math.abs(hash) % COLORS_ARRAY.length;
+    return COLORS_ARRAY[index];
+};
+
 function Patients() {
     const [hastalar, setHastalar] = useState([]);
     const [sortMode, setSortMode] = useState('newest');
@@ -135,8 +192,14 @@ function Patients() {
             resim_url: item.resim_url,
             detections: item.detections || [],
             rapor: item.detections && item.detections.length > 0
-                ? item.detections.map(d => `${d.class} (%${d.confidence})`)
-                : typeof item.rapor === 'string' ? item.rapor.split(', ') : [item.rapor]
+                ? item.detections.map(d => `${translateClass(d.class)} (%${d.confidence})`)
+                : typeof item.rapor === 'string' ? item.rapor.split(', ').map(rText => {
+                    const parts = rText.split(' (');
+                    if(parts.length === 2) {
+                         return `${translateClass(parts[0])} (${parts[1]}`;
+                    }
+                    return translateClass(rText);
+                }) : [item.rapor]
         });
         setActiveTab("detay");
     };
@@ -189,14 +252,16 @@ function Patients() {
             const isHovered = hoveredBox === index;
             const isVisible = showBoxes || isHovered;
 
+            const colorHex = getClassColorHex(det.class);
+
             const style = {
                 position: "absolute",
                 left: x1 * scaleX,
                 top: y1 * scaleY,
                 width: (x2 - x1) * scaleX,
                 height: (y2 - y1) * scaleY,
-                border: isVisible ? (isHovered ? "3px solid #ff0000" : "2px solid #00ff00") : "none",
-                backgroundColor: isHovered ? "rgba(255, 0, 0, 0.1)" : "transparent",
+                border: isVisible ? (isHovered ? `3px solid ${colorHex}` : `2px solid ${colorHex}`) : "none",
+                backgroundColor: isHovered ? `${colorHex}22` : "transparent",
                 cursor: "pointer",
                 zIndex: isHovered ? 10 : 1,
             };
@@ -213,7 +278,7 @@ function Patients() {
                             position: "absolute",
                             top: "-25px",
                             left: "0",
-                            backgroundColor: "rgba(0, 0, 0, 0.8)",
+                            backgroundColor: getClassColorHex(det.class),
                             color: "white",
                             padding: "2px 6px",
                             borderRadius: "4px",
@@ -221,7 +286,7 @@ function Patients() {
                             whiteSpace: "nowrap",
                             zIndex: 20
                         }}>
-                            {det.class} (%{det.confidence})
+                            {translateClass(det.class)} (%{det.confidence})
                         </div>
                     )}
                 </div>
@@ -384,7 +449,7 @@ function Patients() {
                                 </Button>
                             </div>
                             <div className="mt-4 d-flex border-bottom">
-                                <button 
+                                <button
                                     onClick={() => setActiveTab("gecmis")}
                                     className={`px-4 py-2 fw-bold transition-all border-0 bg-transparent ${activeTab === 'gecmis' ? 'text-primary border-bottom border-primary border-3' : 'text-muted hover:text-dark'}`}
                                     style={{ borderBottom: activeTab === 'gecmis' ? '3px solid var(--bs-primary)' : 'none' }}
@@ -490,8 +555,8 @@ function Patients() {
                                                                     onMouseLeave={() => setHoveredBox(null)}
                                                                     style={{ cursor: "pointer", transition: "all 0.2s" }}
                                                                 >
-                                                                    <div className="d-flex align-items-start gap-2">
-                                                                        <span className="material-symbols-outlined text-warning" style={{ fontSize: "18px" }}>warning</span>
+                                                                    <div className="d-flex align-items-center gap-2">
+                                                                        <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: getClassColorHex(r.split(" (")[0]) }}></div>
                                                                         <span className="fw-semibold text-sm">{r}</span>
                                                                     </div>
                                                                 </ListGroup.Item>

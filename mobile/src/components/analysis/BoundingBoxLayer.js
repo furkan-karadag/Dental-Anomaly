@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { COLORS } from '../../theme/colors';
+import { COLORS, getClassColorHex, translateClass } from '../../theme/colors';
 import { styles } from '../../screens/AnalysisDetailScreen.styles';
 
 const BoundingBoxLayer = ({
@@ -29,13 +29,8 @@ const BoundingBoxLayer = ({
 
         const isSelected = selectedDetectionIndex === index;
         const anySelected = selectedDetectionIndex !== null;
-        const isHealthy = det.class.toLowerCase().includes('healthy');
 
-        let boxColor = isHealthy ? COLORS.emerald600 : COLORS.medicalBlue;
-        if (det.class.toLowerCase().includes('abscess') || det.class.toLowerCase().includes('carries')) {
-            boxColor = COLORS.abscessOrange;
-        }
-        if (isSelected) boxColor = '#facc15';
+        let boxColor = getClassColorHex(det.class);
 
         const opacity = (anySelected && !isSelected) ? 0.3 : 1;
 
@@ -50,7 +45,7 @@ const BoundingBoxLayer = ({
                     width: `${widthPct}%`,
                     height: `${heightPct}%`,
                     borderColor: boxColor,
-                    backgroundColor: isSelected ? 'rgba(250, 204, 21, 0.2)' : `${boxColor}15`,
+                    backgroundColor: isSelected ? `${boxColor}40` : `${boxColor}15`,
                     zIndex: isSelected ? 10 : 1,
                     borderWidth: isSelected ? 3 : 2,
                     opacity: opacity
@@ -60,10 +55,10 @@ const BoundingBoxLayer = ({
                 {(!anySelected || isSelected) && (
                     <View style={[styles.boxLabel, { backgroundColor: boxColor }]}>
                         <Text
-                            style={[styles.boxLabelText, isSelected && { color: 'black' }]}
+                            style={[styles.boxLabelText, isSelected && { color: 'white', fontWeight: 'bold' }]}
                             numberOfLines={1}
                         >
-                            {det.class} {det.confidence}%
+                            {translateClass(det.class)} {det.confidence}%
                         </Text>
                     </View>
                 )}

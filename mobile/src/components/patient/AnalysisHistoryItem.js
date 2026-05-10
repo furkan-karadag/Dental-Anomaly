@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { COLORS } from '../../theme/colors';
+import { COLORS, translateClass } from '../../theme/colors';
 import { API_URL } from '../../utils/constants';
 
 const AnalysisHistoryItem = ({ item, patientName, navigation, onDelete }) => {
@@ -18,7 +18,13 @@ const AnalysisHistoryItem = ({ item, patientName, navigation, onDelete }) => {
             image_url: imageUrl,
             patient_name: patientName,
             date: item.tarih,
-            report_text: item.rapor,
+            report_text: item.rapor ? item.rapor.split(', ').map(r => {
+                const parts = r.split(' (');
+                if (parts.length === 2) {
+                    return `${translateClass(parts[0])} (${parts[1]}`;
+                }
+                return translateClass(r);
+            }).join(', ') : item.rapor,
             detections: detections
         });
     };
@@ -49,7 +55,15 @@ const AnalysisHistoryItem = ({ item, patientName, navigation, onDelete }) => {
                 />
                 <View style={styles.historyInfo}>
                     <Text style={styles.resultLabel}>Analiz Sonucu:</Text>
-                    <Text style={styles.resultText} numberOfLines={2}>{item.rapor}</Text>
+                    <Text style={styles.resultText} numberOfLines={2}>{
+                        item.rapor ? item.rapor.split(', ').map(r => {
+                            const parts = r.split(' (');
+                            if (parts.length === 2) {
+                                return `${translateClass(parts[0])} (${parts[1]}`;
+                            }
+                            return translateClass(r);
+                        }).join(', ') : ''
+                    }</Text>
 
                     <TouchableOpacity
                         style={styles.viewDetailBtn}

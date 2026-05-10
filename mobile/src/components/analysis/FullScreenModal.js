@@ -41,7 +41,7 @@ const FullScreenModal = ({
                     <TouchableOpacity onPress={onClose} style={styles.fsCloseBtn}>
                         <MaterialIcons name="close" size={28} color="white" />
                     </TouchableOpacity>
-                    <Text style={styles.fsTitle}>Detailed Inspection</Text>
+                    <Text style={styles.fsTitle}>Detaylı İnceleme</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
@@ -65,7 +65,7 @@ const FullScreenModal = ({
 
                 <View style={styles.fsFooter}>
                     <Text style={{ color: 'white', textAlign: 'center', opacity: 0.7 }}>
-                        Pinch to zoom feature coming soon
+                        Yakınlaştırma (zoom) özelliği yakında eklenecek
                     </Text>
                 </View>
             </SafeAreaView>

@@ -10,6 +10,7 @@ import DashboardScreen from '../screens/DashboardScreen';
 import AddPatientScreen from '../screens/AddPatientScreen';
 import PatientDetailScreen from '../screens/PatientDetailScreen';
 import AnalysisDetailScreen from '../screens/AnalysisDetailScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -41,6 +42,7 @@ const AppNavigator = () => {
                         <Stack.Screen name="AddPatient" component={AddPatientScreen} options={{ title: 'Hasta Ekle', headerShown: true }} />
                         <Stack.Screen name="PatientDetail" component={PatientDetailScreen} options={{ title: 'Hasta Detayı', headerShown: true }} />
                         <Stack.Screen name="AnalysisDetail" component={AnalysisDetailScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false }} />
                     </>
                 )}
             </Stack.Navigator>
