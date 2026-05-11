@@ -49,7 +49,7 @@ const RecentPatientsList = ({ patients, loading, navigation, getStatusStyle, isS
                                         {patient.son_tarih ? `Son Tarama: ${patient.son_tarih}` : 'Henüz kayıt yok'}
                                     </Text>
                                     <Text style={styles.patientId}>
-                                        ID: #{patient.id} • {statusConfig.label}
+                                        TC: {patient.tc_no} • {statusConfig.label}
                                     </Text>
                                 </View>
 

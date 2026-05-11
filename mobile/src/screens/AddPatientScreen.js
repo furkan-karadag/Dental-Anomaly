@@ -67,7 +67,7 @@ const AddPatientScreen = ({ navigation }) => {
                     <Input
                         label="TC Kimlik No"
                         value={tcNo}
-                        onChangeText={setTcNo}
+                        onChangeText={(text) => setTcNo(text.replace(/\D/g, ''))}
                         placeholder="11 Haneli TC No"
                         keyboardType="numeric"
                         maxLength={11}

@@ -118,10 +118,6 @@ const AnalysisDetailScreen = ({ route, navigation }) => {
 
             {/* Footer */}
             <View style={styles.footer}>
-                <TouchableOpacity style={styles.downloadButton}>
-                    <MaterialIcons name="picture-as-pdf" size={24} color="white" />
-                    <Text style={styles.downloadButtonText}>PDF Raporunu İndir</Text>
-                </TouchableOpacity>
                 <Text style={styles.versionText}>Tıbbi Sınıf YZ Analizi • v2.4.0</Text>
             </View>
 

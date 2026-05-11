@@ -66,7 +66,7 @@ const LoginScreen = ({ navigation }) => {
                     <Input
                         label="TC Kimlik No"
                         value={tcNo}
-                        onChangeText={setTcNo}
+                        onChangeText={(text) => setTcNo(text.replace(/\D/g, ''))}
                         placeholder="12345678901"
                         keyboardType="numeric"
                         maxLength={11}

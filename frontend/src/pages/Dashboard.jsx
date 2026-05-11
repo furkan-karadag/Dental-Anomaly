@@ -106,12 +106,9 @@ const Dashboard = () => {
                                     key={patient.id}
                                     name={`${patient.ad} ${patient.soyad}`}
                                     id={patient.tc_no}
-                                    time="Yakın zamanda kayıt oldu"
-                                    scanType="Bilinmiyor"
-                                    // Fixed placeholder for now
+                                    time={patient.son_tarih ? `Son Tarama: ${patient.son_tarih}` : 'Henüz tarama yok'}
+                                    scanType={Number(patient.analiz_sayisi) > 0 ? `${patient.analiz_sayisi} Analiz` : "Analiz Yok"}
                                     image="https://lh3.googleusercontent.com/aida-public/AB6AXuBm425Ddwiqi83gG-wcfub3nkBfmOdxC6jJZfbzXPHDzo-4QeQUbODYhcImF7DWwlh5kGnFLkr7fXgvKjVo6-uV1z6vo8lL7u70OUC0K8bovpmuwlkbBqqMn_ZqWl0Yky3cedtHMUDExwiuiVkPuM1NAJA-BT9-kxn6YhMiNK3OwtbRulKDNv0J7wgVHNDoxJLF_rJsYVTPL07oMY1waDrf62VSrN88zm2Gqc4JWmqb5dJzOgldl2Z4zX_e6yCiPrZfUyV3VFLSK4Ew"
-                                    status="Kayıtlı"
-                                    statusColor="bg-blue-50 text-blue-700 border-blue-200"
                                     onClick={() => navigate('/patients', { state: { patientId: patient.id } })}
                                 />
                             ))}
@@ -142,12 +139,14 @@ const StatCard = ({ icon, iconColor, iconBg, badge, badgeColor, label, value, on
 const PatientCard = ({ name, id, time, scanType, image, status, statusColor, statusIcon, onClick }) => (
     <div onClick={onClick} className="bg-surface-light dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg transition-all overflow-hidden group cursor-pointer flex flex-col">
         <div className="relative h-48 w-full overflow-hidden bg-black">
-            <div className="absolute top-3 right-3 z-10">
-                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border shadow-sm flex items-center gap-1 ${statusColor}`}>
-                    {statusIcon ? <span className="material-symbols-outlined text-[14px]">{statusIcon}</span> : <span className="size-1.5 rounded-full bg-amber-500 animate-pulse"></span>}
-                    {status}
-                </span>
-            </div>
+            {status && (
+                <div className="absolute top-3 right-3 z-10">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold border shadow-sm flex items-center gap-1 ${statusColor}`}>
+                        {statusIcon ? <span className="material-symbols-outlined text-[14px]">{statusIcon}</span> : <span className="size-1.5 rounded-full bg-amber-500 animate-pulse"></span>}
+                        {status}
+                    </span>
+                </div>
+            )}
             <div className="w-full h-full bg-center bg-no-repeat bg-cover group-hover:scale-105 transition-transform duration-500 opacity-90" style={{ backgroundImage: `url("${image}")` }}></div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
         </div>
@@ -155,7 +154,7 @@ const PatientCard = ({ name, id, time, scanType, image, status, statusColor, sta
             <div>
                 <div className="flex justify-between items-start mb-1">
                     <h4 className="text-text-main dark:text-white text-base font-bold group-hover:text-primary transition-colors">{name}</h4>
-                    <span className="truncate block text-xs text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">ID: {id}</span>
+                    <span className="truncate block text-xs text-slate-400 font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">TC: {id}</span>
                 </div>
                 <p className="text-text-sub text-sm flex items-center gap-1">
                     <span className="material-symbols-outlined text-[16px] text-slate-400">schedule</span>

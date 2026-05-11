@@ -30,7 +30,8 @@ def hastalari_getir(current_user: dict = Depends(get_current_user)):
     # Fetch patients with their latest X-ray info using a left join on a subquery
     # Finds the latest rontgen (max id) for each patient
     query = """
-        SELECT h.*, r.detections, r.tarih as son_tarih
+        SELECT h.*, r.detections, r.tarih as son_tarih,
+        (SELECT COUNT(*) FROM rontgenler WHERE hasta_id = h.id) as analiz_sayisi
         FROM hastalar h
         LEFT JOIN rontgenler r ON r.id = (
             SELECT MAX(id) FROM rontgenler WHERE hasta_id = h.id

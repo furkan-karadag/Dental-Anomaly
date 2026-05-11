@@ -544,9 +544,9 @@ function Patients() {
                                                         <span className="material-symbols-outlined text-primary">analytics</span>
                                                         Yapay Zeka Bulguları
                                                     </h6>
-                                                    {analizSonucu.rapor.length > 0 ? (
+                                                    {analizSonucu.detections && analizSonucu.detections.length > 0 ? (
                                                         <ListGroup>
-                                                            {analizSonucu.rapor.map((r, i) => (
+                                                            {analizSonucu.detections.map((det, i) => (
                                                                 <ListGroup.Item
                                                                     key={i}
                                                                     variant="light"
@@ -556,8 +556,8 @@ function Patients() {
                                                                     style={{ cursor: "pointer", transition: "all 0.2s" }}
                                                                 >
                                                                     <div className="d-flex align-items-center gap-2">
-                                                                        <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: getClassColorHex(r.split(" (")[0]) }}></div>
-                                                                        <span className="fw-semibold text-sm">{r}</span>
+                                                                        <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: getClassColorHex(det.class) }}></div>
+                                                                        <span className="fw-semibold text-sm">{translateClass(det.class)} (%{det.confidence})</span>
                                                                     </div>
                                                                 </ListGroup.Item>
                                                             ))}
